@@ -8,6 +8,7 @@ function var_init() {
     no_input=false
     prompt_result=""
     do_cleanup=false
+    prefix="sda"
 }
 
 
@@ -54,6 +55,10 @@ function parse_params() {
                 shift
                 no_input=true
                 ;;
+            -p|--prefix)
+                shift
+                prefix=$1
+                shift
             --)
                 shift
                 break
@@ -69,6 +74,11 @@ function parse_params() {
 
 
 function get_params() {
+    if [ `contains "$*" -p` -eq 0 ]; then
+        prompt_param "$prefix" "Disk to Install to?"
+        prefix="/dev/$prompt_result"
+    fi
+
     if [ `contains "$*" -n` -eq 0 ]; then
         prompt_param "$hostname" "Hostname"
         hostname="$prompt_result"
@@ -136,7 +146,7 @@ ef02
 
     # set swap/root partition
     if (( $swap > 0 )); then
-        os_partition="/dev/sda3"
+        os_partition="${prefix}3"
         partition_commands="
 $partition_commands
 n
@@ -153,7 +163,7 @@ w
 y
 "
     else
-        os_partition="/dev/sda2"
+        os_partition="${prefix}2"
         partition_commands="
 $partition_commands
 n

@@ -28,6 +28,7 @@ Usage:
      -s|--swap                  Swap size (default: 0 = no swap)
      -c|--clean                 Clean up disks for compaction
     -ni|--no-input              Automaitcally use defaults for everything
+     -p|--prefix                Disk prefix for installation (default: sda)
 EOF
 }
 
@@ -54,7 +55,7 @@ function main() {
 
     run_section "Variables" "print_vars"
     run_section "Syncing Time" "timedatectl set-ntp true"
-    # run_section "Paritioning Disk" "partition_disk"
+    run_section "Paritioning Disk" "partition_disk"
     run_section "Updating Mirrorlist" "update_mirrors"
     # run_section "Bootstrapping Arch" "bootstrap_arch"
     # run_section "Running Base Install" "do_chroot"
