@@ -64,7 +64,7 @@ function parse_params() {
                 ;;
             -v|--device)
                 shift
-                prefix=$1
+                device=$1
                 shift
                 ;;
             -d|--dry-run)
