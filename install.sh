@@ -54,18 +54,21 @@ function main() {
     fi
 
     run_section "Variables" "print_vars"
-    run_section "Syncing Time" "timedatectl set-ntp true"
-    run_section "Paritioning Disk" "partition_disk"
-    run_section "Updating Mirrorlist" "update_mirrors"
-    # run_section "Bootstrapping Arch" "bootstrap_arch"
-    # run_section "Running Base Install" "do_chroot"
-    # if [ "$do_cleanup" = true ]; then
-    #     run_section "Cleaning Up" "clean_up"
-    # fi
-    # if [ "$do_efi" = false ]; then
-    #     run_section "Ejecting Installation Media" "eject_install"
-    # fi
-    # run_section "Rebooting" "shutdown -r now"
+
+    if [ "$dry_run" = false ]; then
+        run_section "Syncing Time" "timedatectl set-ntp true"
+        run_section "Paritioning Disk" "partition_disk"
+        run_section "Updating Mirrorlist" "update_mirrors"
+        # run_section "Bootstrapping Arch" "bootstrap_arch"
+        # run_section "Running Base Install" "do_chroot"
+        # if [ "$do_cleanup" = true ]; then
+        #     run_section "Cleaning Up" "clean_up"
+        # fi
+        # if [ "$do_efi" = false ]; then
+        #     run_section "Ejecting Installation Media" "eject_install"
+        # fi
+        # run_section "Rebooting" "shutdown -r now"
+    fi
 }
 
 

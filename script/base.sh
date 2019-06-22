@@ -8,6 +8,7 @@ function var_init() {
     no_input=false
     prompt_result=""
     do_cleanup=false
+    dry_run=false
     prefix="sda"
 }
 
@@ -59,6 +60,11 @@ function parse_params() {
                 shift
                 prefix=$1
                 shift
+                ;;
+            -d|--dry-run)
+                shift
+                dry_run=true
+                ;;
             --)
                 shift
                 break
@@ -102,6 +108,9 @@ function get_params() {
 
 
 function print_vars() {
+    pretty_print "Install Disk" $fg_magenta 1
+    pretty_print ": $prefix" $fg_white
+
     pretty_print "Hostname" $fg_magenta 1
     pretty_print ": $hostname" $fg_white
 
