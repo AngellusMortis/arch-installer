@@ -25,7 +25,7 @@ Usage:
     -nc|--no-colour             Disables colour output
      -n|--hostname              Hostname to use (default: mortis-arch)
      -e|--efi                   Use UEFI instead of BIOS boot
-     -s|--swap                  Swap size (default: 0 = no swap)
+     -s|--swap                  Swap size in GB (default: 0 = no swap)
      -c|--clean                 Clean up disks for compaction
     -ni|--no-input              Automaitcally use defaults for everything
      -f|--prefix                Disk prefix for installation (default: /dev/sda)

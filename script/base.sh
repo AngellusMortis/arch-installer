@@ -91,7 +91,7 @@ function get_params() {
     fi
 
     if [ `contains "$*" -s` -eq 0 ]; then
-        prompt_param "$swap" "Swap space to allocate in MB"
+        prompt_param "$swap" "Swap space to allocate in GB"
         swap="$prompt_result"
     fi
 
@@ -115,7 +115,7 @@ function print_vars() {
     pretty_print ": $hostname" $fg_white
 
     pretty_print "Swap" $fg_magenta 1
-    pretty_print ": ${swap}MB" $fg_white
+    pretty_print ": ${swap}GB" $fg_white
 
     pretty_print "Using EFI" $fg_magenta 1
     pretty_print ": $do_efi" $fg_white
@@ -156,7 +156,7 @@ $partition_commands
 n
 2
 
-+1G
++${swap}G
 8200
 n
 3
@@ -181,7 +181,7 @@ y
     fi
     echo "$partition_commands" | gdisk $prefix
 
-    if [ "$do_swap" = true ]; then
+    if (( $swap > 0 )); then
         mkswap "${prefix}2"
         swapon "${prefix}2"
     fi
