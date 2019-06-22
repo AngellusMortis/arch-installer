@@ -195,6 +195,7 @@ y
     fi
 
     swapoff -a
+    wipefs -a $device
     dd if=/dev/zero of=$device bs=512 count=1 conv=notrunc
     echo "$partition_commands" | gdisk $device
 
@@ -206,8 +207,8 @@ y
     mount $os_partition /mnt
     if [ "$do_efi" = true ]; then
         mkfs.fat -F32 "${device}${prefix}1"
-        mkdir /mnt/boot/efi -p
-        mount "${device}${prefix}1" /mnt/boot/efi
+        mkdir /mnt/efi -p
+        mount "${device}${prefix}1" /mnt/efi
     fi
 }
 

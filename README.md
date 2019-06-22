@@ -5,8 +5,8 @@ Set of bash scripts to automate an Arch Installation, tailored to my preferences
 ## Usage
 
 ```bash
-curl -L https://api.github.com/repos/AngellusMortis/arch-installer/tarball > i.tar.gz
-tar -xvf i.tar.gz
-cd Angellus*
+curl -sL http://mort.is/arch
+cat download.sh
+./download.sh
 ./install.sh
 ```
