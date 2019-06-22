@@ -26,9 +26,11 @@ Usage:
      -n|--hostname              Hostname to use (default: mortis-arch)
      -e|--efi                   Use UEFI instead of BIOS boot
      -s|--swap                  Swap size in GB (default: 0 = no swap)
+     -v|--device                Device for installation (default: /dev/sda)
+     -f|--prefix                Extra partition prefix
      -c|--clean                 Clean up disks for compaction
     -ni|--no-input              Automaitcally use defaults for everything
-     -f|--prefix                Disk prefix for installation (default: /dev/sda)
+     -d|--dry-run               Only print final variables, do not proceed
 EOF
 }
 

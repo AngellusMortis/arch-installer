@@ -9,7 +9,8 @@ function var_init() {
     prompt_result=""
     do_cleanup=false
     dry_run=false
-    prefix="/dev/sda"
+    device="/dev/sda"
+    prefix=""
 }
 
 
@@ -61,6 +62,11 @@ function parse_params() {
                 prefix=$1
                 shift
                 ;;
+            -v|--device)
+                shift
+                prefix=$1
+                shift
+                ;;
             -d|--dry-run)
                 shift
                 dry_run=true
@@ -80,8 +86,13 @@ function parse_params() {
 
 
 function get_params() {
+    if [ `contains "$*" -v` -eq 0 ]; then
+        prompt_param "$device" "Disk to Install to?"
+        prefix="$prompt_result"
+    fi
+
     if [ `contains "$*" -f` -eq 0 ]; then
-        prompt_param "$prefix" "Disk to Install to?"
+        prompt_param "$prefix" "Extra prefix for partitions?"
         prefix="$prompt_result"
     fi
 
@@ -109,6 +120,9 @@ function get_params() {
 
 function print_vars() {
     pretty_print "Install Disk" $fg_magenta 1
+    pretty_print ": $device" $fg_white
+
+    pretty_print "Parition Prefix" $fg_magenta 1
     pretty_print ": $prefix" $fg_white
 
     pretty_print "Hostname" $fg_magenta 1
@@ -150,7 +164,7 @@ ef02
 
     # set swap/root partition
     if (( $swap > 0 )); then
-        os_partition="${prefix}3"
+        os_partition="${device}${prefix}3"
         partition_commands="
 $partition_commands
 n
@@ -167,7 +181,7 @@ w
 y
 "
     else
-        os_partition="${prefix}2"
+        os_partition="${device}${prefix}2"
         partition_commands="
 $partition_commands
 n
@@ -179,18 +193,18 @@ w
 y
 "
     fi
-    echo "$partition_commands" | gdisk $prefix
+    echo "$partition_commands" | gdisk $device
 
     if (( $swap > 0 )); then
-        mkswap "${prefix}2"
-        swapon "${prefix}2"
+        mkswap "${device}${prefix}2"
+        swapon "${device}${prefix}2"
     fi
     mkfs.ext4 $os_partition
     mount $os_partition /mnt
     if [ "$do_efi" = true ]; then
-        mkfs.fat -F32 "${prefix}1"
+        mkfs.fat -F32 "${device}${prefix}1"
         mkdir /mnt/boot/efi -p
-        mount "${prefix}1" /mnt/boot/efi
+        mount "${device}${prefix}1" /mnt/boot/efi
     fi
 }
 
