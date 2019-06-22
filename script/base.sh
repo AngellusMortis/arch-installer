@@ -56,7 +56,7 @@ function parse_params() {
                 shift
                 no_input=true
                 ;;
-            -p|--prefix)
+            -f|--prefix)
                 shift
                 prefix=$1
                 shift
@@ -80,7 +80,7 @@ function parse_params() {
 
 
 function get_params() {
-    if [ `contains "$*" -p` -eq 0 ]; then
+    if [ `contains "$*" -f` -eq 0 ]; then
         prompt_param "$prefix" "Disk to Install to?"
         prefix="/dev/$prompt_result"
     fi
