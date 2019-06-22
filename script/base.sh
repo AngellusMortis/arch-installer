@@ -153,6 +153,7 @@ function print_vars() {
 function clean_disk() {
     swapoff -a
     wipefs -a $device
+    dd if=/dev/zero of=$device bs=512 count=1 conv=notrunc
 }
 
 
@@ -160,7 +161,7 @@ function clean_disk() {
 # ARGS: None
 # OUTS: None
 function wipe_disk() {
-    cryptsetup open --type plain -d /dev/urandom /dev/$device to_be_wiped
+    cryptsetup open --type plain -d /dev/urandom $device to_be_wiped
     dd if=/dev/zero of=/dev/mapper/to_be_wiped status=progress || true
     cryptsetup close to_be_wiped
 }
@@ -221,7 +222,6 @@ y
 "
     fi
 
-    dd if=/dev/zero of=$device bs=512 count=1 conv=notrunc
     echo "$partition_commands" | gdisk $device
 
     if (( $swap > 0 )); then
