@@ -61,7 +61,7 @@ function main() {
         run_section "Syncing Time" "timedatectl set-ntp true"
         run_section "Paritioning Disk" "partition_disk"
         run_section "Updating Mirrorlist" "update_mirrors"
-        # run_section "Bootstrapping Arch" "bootstrap_arch"
+        run_section "Bootstrapping Arch" "bootstrap_arch"
         # run_section "Running Base Install" "do_chroot"
         # if [ "$do_cleanup" = true ]; then
         #     run_section "Cleaning Up" "clean_up"

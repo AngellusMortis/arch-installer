@@ -193,6 +193,8 @@ w
 y
 "
     fi
+
+    dd if=/dev/zero of=$device bs=512 count=1 conv=notrunc
     echo "$partition_commands" | gdisk $device
 
     if (( $swap > 0 )); then
@@ -218,14 +220,14 @@ function update_mirrors() {
 # ARGS: None
 # OUTS: None
 function bootstrap_arch() {
-    pacstrap /mnt base
+    pacstrap /mnt base base-devel
     genfstab -U /mnt >> /mnt/etc/fstab
-    chmod +x install-base.sh
-    cp install-base.sh /mnt/root
-    mkdir /mnt/root/.ssh
-    chmod 700 /mnt/root/.ssh
-    cp id_rsa.pub /mnt/root/.ssh/authorized_keys
-    chmod 600 /mnt/root/.ssh/authorized_keys
+    # chmod +x install-base.sh
+    # cp install-base.sh /mnt/root
+    # mkdir /mnt/root/.ssh
+    # chmod 700 /mnt/root/.ssh
+    # cp id_rsa.pub /mnt/root/.ssh/authorized_keys
+    # chmod 600 /mnt/root/.ssh/authorized_keys
 }
 
 
