@@ -28,7 +28,7 @@ Usage:
      -s|--swap                  Swap size (default: 0 = no swap)
      -c|--clean                 Clean up disks for compaction
     -ni|--no-input              Automaitcally use defaults for everything
-     -p|--prefix                Disk prefix for installation (default: sda)
+     -f|--prefix                Disk prefix for installation (default: /dev/sda)
 EOF
 }
 

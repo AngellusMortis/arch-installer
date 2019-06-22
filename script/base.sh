@@ -9,7 +9,7 @@ function var_init() {
     prompt_result=""
     do_cleanup=false
     dry_run=false
-    prefix="sda"
+    prefix="/dev/sda"
 }
 
 
@@ -82,7 +82,7 @@ function parse_params() {
 function get_params() {
     if [ `contains "$*" -f` -eq 0 ]; then
         prompt_param "$prefix" "Disk to Install to?"
-        prefix="/dev/$prompt_result"
+        prefix="$prompt_result"
     fi
 
     if [ `contains "$*" -n` -eq 0 ]; then
@@ -135,11 +135,6 @@ function partition_disk() {
 n
 1
 
-+1M
-ef02
-n
-1
-
 +550M
 ef00
 "
@@ -184,18 +179,18 @@ w
 y
 "
     fi
-    echo "$partition_commands" | gdisk /dev/sda
+    echo "$partition_commands" | gdisk $prefix
 
     if [ "$do_swap" = true ]; then
-        mkswap /dev/sda2
-        swapon /dev/sda2
+        mkswap "${prefix}2"
+        swapon "${prefix}2"
     fi
     mkfs.ext4 $os_partition
     mount $os_partition /mnt
     if [ "$do_efi" = true ]; then
-        mkfs.fat -F32 /dev/sda1
+        mkfs.fat -F32 "${prefix}1"
         mkdir /mnt/boot/efi -p
-        mount /dev/sda1 /mnt/boot/efi
+        mount "${prefix}1" /mnt/boot/efi
     fi
 }
 
