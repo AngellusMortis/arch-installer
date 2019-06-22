@@ -12,6 +12,7 @@ function var_init() {
     device="/dev/sda"
     prefix=""
     do_wipe=false
+    do_encrypt=false
 }
 
 
@@ -40,6 +41,10 @@ function parse_params() {
                 shift
                 hostname=$1
                 shift
+                ;;
+            -y|--encrypt)
+                shift
+                do_encrypt=true
                 ;;
             -c|--clean)
                 shift
@@ -101,6 +106,16 @@ function get_params() {
         prefix="$prompt_result"
     fi
 
+    if [ `contains "$*" -w` -eq 0 ]; then
+        prompt_bool "$do_wipe" "Securely Wipe Disk"
+        do_efi=$prompt_result
+    fi
+
+    if [ `contains "$*" -y` -eq 0 ]; then
+        prompt_bool "$do_encrypt" "Encrypt Disk"
+        do_efi=$prompt_result
+    fi
+
     if [ `contains "$*" -n` -eq 0 ]; then
         prompt_param "$hostname" "Hostname"
         hostname="$prompt_result"
@@ -135,6 +150,9 @@ function print_vars() {
 
     pretty_print "Wipe Disk" $fg_magenta 1
     pretty_print ": $do_wipe" $fg_white
+
+    pretty_print "Encrypt Disk" $fg_magenta 1
+    pretty_print ": $do_encrypt" $fg_white
 
     pretty_print "Swap" $fg_magenta 1
     pretty_print ": ${swap}GB" $fg_white
@@ -190,6 +208,35 @@ ef02
 "
     fi
 
+    os_partition="${device}${prefix}2"
+    encrypt_partition=""
+    swap_partition="${device}${prefix}2"
+    if [ "$do_encrypt" = false ]; then
+        do_unencrypted_swap()
+    fi
+
+    echo "$partition_commands" | gdisk $device
+
+    if [ "$do_encrypt" = false ]; then
+        do_encrypt()
+    fi
+
+    if (( $swap > 0 )); then
+        mkswap $swap_partition
+        swapon $swap_partition
+    fi
+
+    mkfs.ext4 $os_partition
+    mount $os_partition /mnt
+    if [ "$do_efi" = true ]; then
+        mkfs.fat -F32 "${device}${prefix}1"
+        mkdir /mnt/boot/efi -p
+        mount "${device}${prefix}1" /mnt/boot/efi
+    fi
+}
+
+
+function do_unencrypted_swap() {
     # set swap/root partition
     if (( $swap > 0 )); then
         os_partition="${device}${prefix}3"
@@ -209,7 +256,6 @@ w
 y
 "
     else
-        os_partition="${device}${prefix}2"
         partition_commands="
 $partition_commands
 n
@@ -221,20 +267,24 @@ w
 y
 "
     fi
+}
 
-    echo "$partition_commands" | gdisk $device
+
+function do_encrypt() {
+    encrypt_partition=$os_partition
+    os_partition=/dev/OS/root
+
+    cryptsetup luksFormat --type luks1 $encrypt_partition
+    cryptsetup open $encrypt_partition cryptlvm
+
+    pvcreate /dev/mapper/cryptlvm
+    vgcreate OS /dev/mapper/cryptlvm
 
     if (( $swap > 0 )); then
-        mkswap "${device}${prefix}2"
-        swapon "${device}${prefix}2"
+        lvcreate -L ${swap}G OS -n swap
+        swap_partition=/dev/OS/swap
     fi
-    mkfs.ext4 $os_partition
-    mount $os_partition /mnt
-    if [ "$do_efi" = true ]; then
-        mkfs.fat -F32 "${device}${prefix}1"
-        mkdir /mnt/efi -p
-        mount "${device}${prefix}1" /mnt/efi
-    fi
+    lvcreate -l 100%FREE OS -n root
 }
 
 

@@ -26,6 +26,7 @@ Usage:
      -n|--hostname              Hostname to use (default: mortis-arch)
      -w|--wipe                  Securely wipe disk before partitioning
      -e|--efi                   Use UEFI instead of BIOS boot
+     -y|--encrypt               Encrypt disk
      -s|--swap                  Swap size in GB (default: 0 = no swap)
      -v|--device                Device for installation (default: /dev/sda)
      -f|--prefix                Extra partition prefix
