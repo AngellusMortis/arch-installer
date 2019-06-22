@@ -5,9 +5,9 @@ Set of bash scripts to automate an Arch Installation, tailored to my preferences
 ## Usage
 
 ```bash
-curl -sL http://mort.is/arch > download.sh
-cat download.sh
-sh download.sh
+curl -sL http://mort.is/arch > d.sh
+cat d.sh
+source d.sh
 cd arch-installer-master
 ./install.sh
 ```

@@ -24,6 +24,7 @@ Usage:
      -p|--pause                 Pauses after each section
     -nc|--no-colour             Disables colour output
      -n|--hostname              Hostname to use (default: mortis-arch)
+     -w|--wipe                  Securely wipe disk before partitioning
      -e|--efi                   Use UEFI instead of BIOS boot
      -s|--swap                  Swap size in GB (default: 0 = no swap)
      -v|--device                Device for installation (default: /dev/sda)
@@ -59,6 +60,10 @@ function main() {
 
     if [ "$dry_run" = false ]; then
         run_section "Syncing Time" "timedatectl set-ntp true"
+        run_section "Cleaning Disk" "clean_disk"
+        if [ "$do_wipe" = true ]; then
+            run_section "Wiping Disk" "wipe_disk"
+        fi
         run_section "Paritioning Disk" "partition_disk"
         run_section "Updating Mirrorlist" "update_mirrors"
         run_section "Bootstrapping Arch" "bootstrap_arch"

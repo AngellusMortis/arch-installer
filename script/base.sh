@@ -11,6 +11,7 @@ function var_init() {
     dry_run=false
     device="/dev/sda"
     prefix=""
+    do_wipe=false
 }
 
 
@@ -47,6 +48,10 @@ function parse_params() {
             -e|--efi)
                 shift
                 do_efi=true
+                ;;
+            -w|--wipe)
+                shift
+                do_wipe=true
                 ;;
             -s|--swap)
                 shift
@@ -119,14 +124,17 @@ function get_params() {
 
 
 function print_vars() {
+    pretty_print "Hostname" $fg_magenta 1
+    pretty_print ": $hostname" $fg_white
+
     pretty_print "Install Disk" $fg_magenta 1
     pretty_print ": $device" $fg_white
 
     pretty_print "Parition Prefix" $fg_magenta 1
     pretty_print ": $prefix" $fg_white
 
-    pretty_print "Hostname" $fg_magenta 1
-    pretty_print ": $hostname" $fg_white
+    pretty_print "Wipe Disk" $fg_magenta 1
+    pretty_print ": $do_wipe" $fg_white
 
     pretty_print "Swap" $fg_magenta 1
     pretty_print ": ${swap}GB" $fg_white
@@ -136,6 +144,25 @@ function print_vars() {
 
     pretty_print "Do Clean Up" $fg_magenta 1
     pretty_print ": $do_cleanup" $fg_white
+}
+
+
+# DESC: Cleans any existing partitions for disk
+# ARGS: None
+# OUTS: None
+function clean_disk() {
+    swapoff -a
+    wipefs -a $device
+}
+
+
+# DESC: Securely wipes a disk
+# ARGS: None
+# OUTS: None
+function wipe_disk() {
+    cryptsetup open --type plain -d /dev/urandom /dev/$device to_be_wiped
+    dd if=/dev/zero of=/dev/mapper/to_be_wiped status=progress || true
+    cryptsetup close to_be_wiped
 }
 
 
@@ -194,8 +221,6 @@ y
 "
     fi
 
-    swapoff -a
-    wipefs -a $device
     dd if=/dev/zero of=$device bs=512 count=1 conv=notrunc
     echo "$partition_commands" | gdisk $device
 
