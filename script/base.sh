@@ -194,6 +194,7 @@ y
 "
     fi
 
+    swapoff -a
     dd if=/dev/zero of=$device bs=512 count=1 conv=notrunc
     echo "$partition_commands" | gdisk $device
 
