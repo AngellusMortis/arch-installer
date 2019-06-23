@@ -301,12 +301,13 @@ function update_mirrors() {
 function bootstrap_arch() {
     pacstrap /mnt base base-devel
     genfstab -U /mnt >> /mnt/etc/fstab
-    # chmod +x install-base.sh
-    # cp install-base.sh /mnt/root
-    # mkdir /mnt/root/.ssh
-    # chmod 700 /mnt/root/.ssh
-    # cp id_rsa.pub /mnt/root/.ssh/authorized_keys
-    # chmod 600 /mnt/root/.ssh/authorized_keys
+
+    cp . /mnt/root/arch-installer -R
+
+    mkdir /mnt/root/.ssh
+    chmod 700 /mnt/root/.ssh
+    cp authorized_keys /mnt/root/.ssh/authorized_keys
+    chmod 600 /mnt/root/.ssh/authorized_keys
 }
 
 
