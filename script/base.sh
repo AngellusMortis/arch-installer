@@ -97,7 +97,7 @@ function parse_params() {
 function get_params() {
     if [ `contains "$*" -v` -eq 0 ]; then
         prompt_param "$device" "Disk to Install to?"
-        prefix="$prompt_result"
+        device="$prompt_result"
     fi
 
     if [ `contains "$*" -f` -eq 0 ]; then
@@ -107,12 +107,12 @@ function get_params() {
 
     if [ `contains "$*" -w` -eq 0 ]; then
         prompt_bool "$do_wipe" "Securely Wipe Disk"
-        do_efi=$prompt_result
+        do_wipe=$prompt_result
     fi
 
     if [ `contains "$*" -y` -eq 0 ]; then
         prompt_bool "$do_encrypt" "Encrypt Disk"
-        do_efi=$prompt_result
+        do_encrypt=$prompt_result
     fi
 
     if [ `contains "$*" -n` -eq 0 ]; then
