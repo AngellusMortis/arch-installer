@@ -315,6 +315,9 @@ function bootstrap_arch() {
 function do_chroot() {
     extra_args=""
 
+    if [ "$no_colour" = true ]; then
+        extra_args="$extra_args -nc"
+    fi
     if [ "$do_pause" = true ]; then
         extra_args="$extra_args -p"
     fi
