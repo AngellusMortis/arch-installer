@@ -266,7 +266,7 @@ y
     echo "$partition_commands" | gdisk $device
 
     if [ "$do_encrypt" = false ]; then
-        setup_encrypt()
+        setup_encrypt
     fi
 
     if (( $swap > 0 )); then
