@@ -185,7 +185,7 @@ function wipe_disk() {
 }
 
 
-function do_encrypt() {
+function setup_encrypt() {
     encrypt_partition=$os_partition
     os_partition=/dev/OS/root
 
@@ -266,7 +266,7 @@ y
     echo "$partition_commands" | gdisk $device
 
     if [ "$do_encrypt" = false ]; then
-        do_encrypt()
+        setup_encrypt()
     fi
 
     if (( $swap > 0 )); then
