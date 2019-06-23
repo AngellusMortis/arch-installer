@@ -66,8 +66,8 @@ function main() {
         #     run_section "Wiping Disk" "wipe_disk"
         # fi
         # run_section "Paritioning Disk" "partition_disk"
-        run_section "Updating Mirrorlist" "update_mirrors"
-        run_section "Bootstrapping Arch" "bootstrap_arch"
+        # run_section "Updating Mirrorlist" "update_mirrors"
+        # run_section "Bootstrapping Arch" "bootstrap_arch"
         run_section "Running Chroot Install" "do_chroot"
         # if [ "$do_cleanup" = true ]; then
         #     run_section "Cleaning Up" "clean_up"
