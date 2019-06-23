@@ -304,7 +304,7 @@ function bootstrap_arch() {
     cp $script_dir /mnt/root/arch-installer -R
     chmod +x /mnt/root/arch-installer/script/chroot.sh
 
-    mkdir /mnt/root/.ssh
+    mkdir /mnt/root/.ssh -p
     chmod 700 /mnt/root/.ssh
     cp authorized_keys /mnt/root/.ssh/authorized_keys
     chmod 600 /mnt/root/.ssh/authorized_keys
@@ -315,7 +315,7 @@ function bootstrap_arch() {
 function do_chroot() {
     extra_args=""
 
-    if [ "$no_colour" = true ]; then
+    if [[ -z ${no_colour-} ]]; then
         extra_args="$extra_args -nc"
     fi
     if [ "$do_pause" = true ]; then

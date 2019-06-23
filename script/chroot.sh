@@ -110,7 +110,6 @@ function main() {
     colour_init
 
     echo "$do_pause"
-    echo "$no_colour"
     echo "$hostname"
     echo "$do_encrypt"
     echo "$do_cleanup"
