@@ -301,7 +301,7 @@ function bootstrap_arch() {
     pacstrap /mnt base base-devel
     genfstab -U /mnt > /mnt/etc/fstab
 
-    cp $script_path /mnt/root/arch-installer -R
+    cp $script_dir /mnt/root/arch-installer -R
     chmod +x /mnt/root/arch-installer/script/chroot.sh
 
     mkdir /mnt/root/.ssh
