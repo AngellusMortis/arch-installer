@@ -121,6 +121,8 @@ function script_init() {
 
     # Important to always set as we use it in the exit handler
     readonly ta_none="$(tput sgr0 2> /dev/null || true)"
+
+    prompt_result=""
 }
 
 

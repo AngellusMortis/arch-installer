@@ -6,7 +6,6 @@ function var_init() {
     do_pause=false
     swap=0
     no_input=false
-    prompt_result=""
     do_cleanup=false
     dry_run=false
     device="/dev/sda"
@@ -302,7 +301,8 @@ function bootstrap_arch() {
     pacstrap /mnt base base-devel
     genfstab -U /mnt >> /mnt/etc/fstab
 
-    cp . /mnt/root/arch-installer -R
+    cp $script_path /mnt/root/arch-installer -R
+    chmod +x /mnt/root/arch-installer/script/chroot.sh
 
     mkdir /mnt/root/.ssh
     chmod 700 /mnt/root/.ssh
@@ -314,17 +314,23 @@ function bootstrap_arch() {
 
 function do_chroot() {
     extra_args=""
-    if [ "$do_efi" = true ]; then
-        extra_args="$extra_args -e"
-    fi
+
     if [ "$do_pause" = true ]; then
         extra_args="$extra_args -p"
     fi
-    if [ "$do_azure" = true ]; then
-        extra_args="$extra_args -a"
+    if [ "$do_encrypt" = true ]; then
+        extra_args="$extra_args -y"
     fi
-    arch-chroot /mnt /root/install-base.sh$extra_args -n $hostname $build_type
-    rm /mnt/root/install-base.sh
+    if [ "$do_cleanup" = true ]; then
+        extra_args="$extra_args -c"
+    fi
+    if [ "$do_efi" = true ]; then
+        extra_args="$extra_args -e"
+    fi
+
+    arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -n $hostname
+
+    rm /mnt/root/arch-installer -rf
 }
 
 
