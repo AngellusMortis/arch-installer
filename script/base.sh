@@ -331,7 +331,7 @@ function do_chroot() {
         extra_args="$extra_args -e"
     fi
 
-    arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -v $device -n $hostname
+    arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -v $device -f "$prefix" -n $hostname
 
     rm /mnt/root/arch-installer -rf
 }

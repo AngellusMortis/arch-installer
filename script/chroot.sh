@@ -26,6 +26,7 @@ Usage:
      -n|--hostname              Hostname to use (default: mortis-arch)
      -e|--efi                   Use UEFI instead of BIOS boot
      -v|--device                Device for installation (default: /dev/sda)
+     -f|--prefix                Extra partition prefix
      -y|--encrypt               Encrypt disk
 EOF
 }
@@ -39,6 +40,7 @@ function var_init() {
     do_pause=false
     do_encrypt=false
     device="/dev/sda"
+    prefix=""
 }
 
 
@@ -81,6 +83,11 @@ function parse_params() {
                 device=$1
                 shift
                 ;;
+            -f|--prefix)
+                shift
+                prefix=$1
+                shift
+                ;;
             --)
                 shift
                 break
@@ -120,7 +127,7 @@ function install_bootloader() {
     if [ "$do_encrypt" = true ]; then
         dd bs=512 count=4 if=/dev/random of=/root/cryptlvm.keyfile iflag=fullblock
         chmod 000 /root/cryptlvm.keyfile
-        cryptsetup -v luksAddKey ${device}2 /root/cryptlvm.keyfile
+        cryptsetup -v luksAddKey ${device}${prefix}2 /root/cryptlvm.keyfile
 
     #     # add to FILEs
     #     # FILES=(/root/cryptlvm.keyfile)
