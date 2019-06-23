@@ -186,6 +186,8 @@ function wipe_disk() {
 
 
 function setup_encrypt() {
+    echo "Encrypt"
+
     encrypt_partition=$os_partition
     os_partition=/dev/OS/root
 
@@ -196,6 +198,7 @@ function setup_encrypt() {
     vgcreate OS /dev/mapper/cryptlvm
 
     if (( $swap > 0 )); then
+        echo "Encrypt Swap"
         lvcreate -L ${swap}G OS -n swap
         swap_partition=/dev/OS/swap
     fi
@@ -265,7 +268,7 @@ y
 
     echo "$partition_commands" | gdisk $device
 
-    if [ "$do_encrypt" = false ]; then
+    if [ "$do_encrypt" = true ]; then
         setup_encrypt
     fi
 
