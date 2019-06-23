@@ -460,8 +460,8 @@ function main() {
     parse_params "$@"
     colour_init
 
-    run_section "Syncing Time" "timedatectl set-ntp true"
-    run_section "Paritioning Disk" "partition_disk"
+    # run_section "Syncing Time" "timedatectl set-ntp true"
+    # run_section "Paritioning Disk" "partition_disk"
     run_section "Updating Mirrorlist" "update_mirrors"
     run_section "Bootstrapping Arch" "bootstrap_arch"
     run_section "Running Base Install" "do_chroot"
