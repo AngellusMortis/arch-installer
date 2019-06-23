@@ -129,13 +129,15 @@ function install_bootloader() {
         chmod 000 /root/cryptlvm.keyfile
         cryptsetup -v luksAddKey ${device}${prefix}2 /root/cryptlvm.keyfile
 
-    #     cp /etc/mkinitcpio.conf{,.orig}
-        cat /etc/mkinitcpio.conf.orig | sed 's/FILES=()/FILES=\(/root/cryptlvm.keyfile\)/' > /etc/mkinitcpio.conf
-        cat /etc/mkinitcpio.conf.orig | sed 's/HOOKS=.*/HOOKS=\(base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck\)/' > /etc/mkinitcpio.conf
-        # mkinitcpio -p linux
+        cp /etc/mkinitcpio.conf{,.orig}
+        cat /etc/mkinitcpio.conf.orig | sed 's/FILES=()/FILES=\(\/root\/cryptlvm.keyfile\)/' > /etc/mkinitcpio.conf
+        cp /etc/mkinitcpio.conf{,.part1}
+        cat /etc/mkinitcpio.conf.part1 | sed 's/HOOKS=.*/HOOKS=\(base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck\)/' > /etc/mkinitcpio.conf
+        mkinitcpio -p linux
 
-    #     cp /etc/default/grub{,.orig}
-        # cat /etc/default/grub.orig | sed 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cryptdevice=UUID=device-UUID:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"/' > /etc/default/grub
+        cp /etc/default/grub{,.orig}
+        device_uuid=$(lsblk -f | grep ${device//\/dev\/}${prefix}2 | awk '{print $3}')
+        cat /etc/default/grub.orig | sed "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$device_uuid:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile\"/" > /etc/default/grub
         echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
     fi
 
