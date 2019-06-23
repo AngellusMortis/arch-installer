@@ -25,8 +25,8 @@ Usage:
     -nc|--no-colour             Disables colour output
      -n|--hostname              Hostname to use (default: mortis-arch)
      -e|--efi                   Use UEFI instead of BIOS boot
+     -v|--device                Device for installation (default: /dev/sda)
      -y|--encrypt               Encrypt disk
-     -c|--clean                 Clean up disks for compaction
 EOF
 }
 
@@ -37,8 +37,8 @@ function var_init() {
     hostname="mortis-arch"
     do_efi=false
     do_pause=false
-    do_cleanup=false
     do_encrypt=false
+    device="/dev/sda"
 }
 
 
@@ -72,13 +72,14 @@ function parse_params() {
                 shift
                 do_encrypt=true
                 ;;
-            -c|--clean)
-                shift
-                do_cleanup=true
-                ;;
             -e|--efi)
                 shift
                 do_efi=true
+                ;;
+            -v|--device)
+                shift
+                device=$1
+                shift
                 ;;
             --)
                 shift
@@ -91,6 +92,68 @@ function parse_params() {
                 break;
         esac
     done
+}
+
+
+function init_locales() {
+    ln -sf /usr/share/zoneinfo/US/Eastern /etc/localtime
+    hwclock --systohc
+    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+    locale-gen
+    echo "LANG=en_US.UTF-8" > /etc/locale.conf
+}
+
+
+function init_host() {
+    echo $hostname > /etc/hostname
+    echo "
+127.0.0.1       localhost
+::1             localhost
+127.0.1.1       $hostname.localdomain $hostname.local $hostname
+" > /etc/hosts
+}
+
+
+function install_bootloader() {
+    pacman -S grub --noconfirm
+
+    # if [ "$do_encrypt" = true ]; then
+    #     dd bs=512 count=4 if=/dev/random of=/root/cryptlvm.keyfile iflag=fullblock
+    #     chmod 000 /root/cryptlvm.keyfile
+    #     cryptsetup -v luksAddKey ${device}2 /root/cryptlvm.keyfile
+
+    #     # add to FILEs
+    #     # FILES=(/root/cryptlvm.keyfile)
+
+    #     cp /etc/mkinitcpio.conf{,.orig}
+    #     cat /etc/mkinitcpio.conf.orig | sed 's/HOOKS=()/HOOKS=\(base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck\)/' > /etc/mkinitcpio.conf
+    #     mkinitcpio -p linux
+
+    #     cp /etc/default/grub{,.orig}
+    #     cat /etc/default/grub.orig | sed 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cryptdevice=UUID=device-UUID:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"/' > /etc/default/grub
+    # fi
+
+    if [ "$do_efi" = true ]; then
+        pacman -S efibootmgr --noconfirm
+        grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --recheck
+        grub-mkconfig -o /boot/grub/grub.cfg
+    else
+        grub-install --target=i386-pc $device
+        grub-mkconfig -o /boot/grub/grub.cfg
+    fi
+}
+
+
+function init_root() {
+    passwd=`date +%s | sha256sum | base64 | head -c 32`
+    echo "root:$passwd" | chpasswd
+}
+
+
+function clean_pacman() {
+    pacman -Rs gcc groff man-db git make guile binutils man-pages nano --noconfirm
+    echo "y\ny" | pacman -Scc
+    echo "ILoveCandy" >> /etc/pacman.cfg
 }
 
 
@@ -109,12 +172,13 @@ function main() {
     cron_init
     colour_init
 
-    echo "$do_pause"
-    echo "$hostname"
-    echo "$do_encrypt"
-    echo "$do_cleanup"
-    echo "$do_efi"
-
+    run_section "Initalizing locales" "init_locales"
+    run_section "Setting Hostname" "init_host"
+    run_section "Installing Bootloader" "install_bootloader"
+    run_section "Initaling root User" "init_root"
+    run_section "Installing Core Packages" "pacman -S vim base-devel openssh git python --noconfirm"
+    run_section "Enabling Core Services" "systemctl enable sshd dhcpcd"
+    run_section "Cleaning Up Pacman" "clean_pacman"
 }
 
 
