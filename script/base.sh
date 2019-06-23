@@ -185,10 +185,32 @@ function wipe_disk() {
 }
 
 
+function do_encrypt() {
+    encrypt_partition=$os_partition
+    os_partition=/dev/OS/root
+
+    cryptsetup luksFormat --type luks1 $encrypt_partition
+    cryptsetup open $encrypt_partition cryptlvm
+
+    pvcreate /dev/mapper/cryptlvm
+    vgcreate OS /dev/mapper/cryptlvm
+
+    if (( $swap > 0 )); then
+        lvcreate -L ${swap}G OS -n swap
+        swap_partition=/dev/OS/swap
+    fi
+    lvcreate -l 100%FREE OS -n root
+}
+
+
 # DESC: Partitions, formats and mounts disk
 # ARGS: None
 # OUTS: None
 function partition_disk() {
+    os_partition="${device}${prefix}2"
+    encrypt_partition=""
+    swap_partition=""
+
     # set boot partition
     if [ "$do_efi" = true ]; then
         partition_commands="
@@ -208,38 +230,11 @@ ef02
 "
     fi
 
-    os_partition="${device}${prefix}2"
-    encrypt_partition=""
-    swap_partition="${device}${prefix}2"
-    if [ "$do_encrypt" = false ]; then
-        do_unencrypted_swap()
-    fi
-
-    echo "$partition_commands" | gdisk $device
-
-    if [ "$do_encrypt" = false ]; then
-        do_encrypt()
-    fi
-
-    if (( $swap > 0 )); then
-        mkswap $swap_partition
-        swapon $swap_partition
-    fi
-
-    mkfs.ext4 $os_partition
-    mount $os_partition /mnt
-    if [ "$do_efi" = true ]; then
-        mkfs.fat -F32 "${device}${prefix}1"
-        mkdir /mnt/boot/efi -p
-        mount "${device}${prefix}1" /mnt/boot/efi
-    fi
-}
-
-
-function do_unencrypted_swap() {
     # set swap/root partition
-    if (( $swap > 0 )); then
+    if [ "$do_encrypt" = false ] && (( $swap > 0 )); then
+        swap_partition="${device}${prefix}2"
         os_partition="${device}${prefix}3"
+
         partition_commands="
 $partition_commands
 n
@@ -267,24 +262,25 @@ w
 y
 "
     fi
-}
 
+    echo "$partition_commands" | gdisk $device
 
-function do_encrypt() {
-    encrypt_partition=$os_partition
-    os_partition=/dev/OS/root
-
-    cryptsetup luksFormat --type luks1 $encrypt_partition
-    cryptsetup open $encrypt_partition cryptlvm
-
-    pvcreate /dev/mapper/cryptlvm
-    vgcreate OS /dev/mapper/cryptlvm
+    if [ "$do_encrypt" = false ]; then
+        do_encrypt()
+    fi
 
     if (( $swap > 0 )); then
-        lvcreate -L ${swap}G OS -n swap
-        swap_partition=/dev/OS/swap
+        mkswap $swap_partition
+        swapon $swap_partition
     fi
-    lvcreate -l 100%FREE OS -n root
+
+    mkfs.ext4 $os_partition
+    mount $os_partition /mnt
+    if [ "$do_efi" = true ]; then
+        mkfs.fat -F32 "${device}${prefix}1"
+        mkdir /mnt/boot/efi -p
+        mount "${device}${prefix}1" /mnt/boot/efi
+    fi
 }
 
 
