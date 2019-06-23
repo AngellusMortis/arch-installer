@@ -117,10 +117,10 @@ function init_host() {
 function install_bootloader() {
     pacman -S grub --noconfirm
 
-    # if [ "$do_encrypt" = true ]; then
-    #     dd bs=512 count=4 if=/dev/random of=/root/cryptlvm.keyfile iflag=fullblock
-    #     chmod 000 /root/cryptlvm.keyfile
-    #     cryptsetup -v luksAddKey ${device}2 /root/cryptlvm.keyfile
+    if [ "$do_encrypt" = true ]; then
+        dd bs=512 count=4 if=/dev/random of=/root/cryptlvm.keyfile iflag=fullblock
+        chmod 000 /root/cryptlvm.keyfile
+        cryptsetup -v luksAddKey ${device}2 /root/cryptlvm.keyfile
 
     #     # add to FILEs
     #     # FILES=(/root/cryptlvm.keyfile)
@@ -131,7 +131,8 @@ function install_bootloader() {
 
     #     cp /etc/default/grub{,.orig}
     #     cat /etc/default/grub.orig | sed 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="cryptdevice=UUID=device-UUID:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"/' > /etc/default/grub
-    # fi
+        echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
+    fi
 
     if [ "$do_efi" = true ]; then
         pacman -S efibootmgr --noconfirm
