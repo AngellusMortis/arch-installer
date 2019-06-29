@@ -139,6 +139,29 @@ function install_bootloader() {
         device_uuid=$(lsblk -f | grep ${device//\/dev\/}${prefix}2 | awk '{print $3}')
         cat /etc/default/grub.orig | sed "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$device_uuid:cryptlvm cryptkey=rootfs:\/root\/cryptlvm.keyfile\"/" > /etc/default/grub
         echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
+        
+        # TODO: https://wiki.archlinux.org/index.php/Silent_boot
+        # GRUB_DEFAULT="0"
+        # GRUB_TIMEOUT="0"
+        # GRUB_DISTRIBUTOR="Arch"
+        # GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3 udev.log_priority=3 vt.global_cursor_default=0"
+        # GRUB_CMDLINE_LINUX="cryptdevice=UUID=567ade56-49a8-42b7-a453-a1324f4f2a5a:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"
+
+        # Preload both GPT and MBR modules so that they are not missed
+        # GRUB_PRELOAD_MODULES="part_gpt part_msdos"
+
+        # Uncomment to enable Hidden Menu, and optionally hide the timeout count
+        # GRUB_HIDDEN_TIMEOUT="3"
+        # GRUB_HIDDEN_TIMEOUT_QUIET="true"
+        # GRUB_RECORDFAIL_TIMEOUT=$GRUB_HIDDEN_TIMEOUT
+
+        # The resolution used on graphical terminal
+        # note that you can use only modes which your graphic card supports via VBE
+        # you can see them in real GRUB with the command `vbeinfo'
+        # GRUB_GFXMODE="1920x1080x32,auto"
+
+        # Uncomment to disable generation of recovery mode menu entries
+        # GRUB_DISABLE_RECOVERY="false"
     fi
 
     if [ "$do_efi" = true ]; then
