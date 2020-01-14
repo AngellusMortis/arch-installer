@@ -129,6 +129,7 @@ function install_bootloader() {
         chmod 000 /root/cryptlvm.keyfile
         cryptsetup -v luksAddKey ${device}${prefix}2 /root/cryptlvm.keyfile
 
+        mkinitcpio -p linux
         cp /etc/mkinitcpio.conf{,.orig}
         cat /etc/mkinitcpio.conf.orig | sed 's/FILES=()/FILES=\(\/root\/cryptlvm.keyfile\)/' > /etc/mkinitcpio.conf
         cp /etc/mkinitcpio.conf{,.part1}
