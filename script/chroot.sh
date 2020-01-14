@@ -122,7 +122,7 @@ function init_host() {
 
 
 function install_bootloader() {
-    pacman -S linux mkinitcpio grub --noconfirm
+    pacman -S lvm2 linux mkinitcpio grub --noconfirm
 
     if [ "$do_encrypt" = true ]; then
         dd bs=512 count=4 if=/dev/random of=/root/cryptlvm.keyfile iflag=fullblock
