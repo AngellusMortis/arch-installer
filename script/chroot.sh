@@ -208,7 +208,7 @@ function main() {
     run_section "Setting Hostname" "init_host"
     run_section "Installing Bootloader" "install_bootloader"
     run_section "Initaling root User" "init_root"
-    run_section "Installing Core Packages" "pacman -S vim base-devel openssh git python --noconfirm"
+    run_section "Installing Core Packages" "pacman -S vim base-devel openssh git python linux mkinitcpio --noconfirm"
     run_section "Enabling Core Services" "systemctl enable sshd dhcpcd"
     run_section "Cleaning Up Pacman" "clean_pacman"
 }
