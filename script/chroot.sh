@@ -124,7 +124,7 @@ function init_host() {
 function install_bootloader() {
     if [ "$do_encrypt" = true ]; then
         pacman -S lvm2 linux mkinitcpio grub --noconfirm
-        
+
         dd bs=512 count=4 if=/dev/random of=/root/cryptlvm.keyfile iflag=fullblock
         chmod 000 /root/cryptlvm.keyfile
         cryptsetup -v luksAddKey ${device}${prefix}2 /root/cryptlvm.keyfile
@@ -140,7 +140,7 @@ function install_bootloader() {
         device_uuid=$(lsblk -f | grep ${device//\/dev\/}${prefix}2 | awk '{print $3}')
         cat /etc/default/grub.orig | sed "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$device_uuid:cryptlvm cryptkey=rootfs:\/root\/cryptlvm.keyfile\"/" > /etc/default/grub
         echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
-        
+
         # TODO: https://wiki.archlinux.org/index.php/Silent_boot
         # GRUB_DEFAULT="0"
         # GRUB_TIMEOUT="0"
@@ -185,7 +185,7 @@ function init_root() {
 
 
 function clean_pacman() {
-    pacman -Rs gcc groff man-db git make guile binutils man-pages nano --noconfirm
+    pacman -Rs gcc groff git make guile --noconfirm
     echo "y\ny" | pacman -Scc
     echo "ILoveCandy" >> /etc/pacman.cfg
 }

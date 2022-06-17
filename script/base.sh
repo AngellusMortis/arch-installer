@@ -1,5 +1,5 @@
 function var_init() {
-    readonly mirrorlist_url="https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on"
+    readonly mirrorlist_url="https://archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on"
 
     hostname="mortis-arch"
     do_efi=false
@@ -8,7 +8,7 @@ function var_init() {
     no_input=false
     do_cleanup=false
     dry_run=false
-    device="/dev/sda"
+    devices=()
     prefix=""
     do_wipe=false
     do_encrypt=false
@@ -73,7 +73,7 @@ function parse_params() {
                 ;;
             -v|--device)
                 shift
-                device=$1
+                devices+=($1)
                 shift
                 ;;
             -d|--dry-run)
@@ -91,12 +91,16 @@ function parse_params() {
                 break;
         esac
     done
+
+    if [[ "${#devices[@]}" -eq 0 ]]; then
+        devices+=("/dev/sda")
+    fi
 }
 
 
 function get_params() {
     if [ `contains "$*" -v` -eq 0 ]; then
-        prompt_param "$device" "Disk to Install to?"
+        prompt_param "$devices" "Disk to Install to?"
         device="$prompt_result"
     fi
 
@@ -141,8 +145,10 @@ function print_vars() {
     pretty_print "Hostname" $fg_magenta 1
     pretty_print ": $hostname" $fg_white
 
-    pretty_print "Install Disk" $fg_magenta 1
-    pretty_print ": $device" $fg_white
+    pretty_print "Install Disk(s)" $fg_magenta 1
+    pretty_print ": " $fg_white 1
+    pretty_print " ${devices[@]}" $fg_white
+    pretty_print ""
 
     pretty_print "Parition Prefix" $fg_magenta 1
     pretty_print ": $prefix" $fg_white
@@ -168,9 +174,21 @@ function print_vars() {
 # ARGS: None
 # OUTS: None
 function clean_disk() {
-    swapoff -a
-    wipefs -a $device
-    dd if=/dev/zero of=$device bs=512 count=1 conv=notrunc
+    lvremove -An OS -y || true
+    vgremove OS -y || true
+    pvremove /dev/mapper/cryptlvm -y || true
+    cryptsetup close /dev/mapper/cryptlvm || true
+    mdadm --stop /dev/md/os || true
+
+    for device in "${devices[@]}"; do
+        echo "Clean disk: $device"
+        mdadm --misc --zero-superblock $device || true
+        mdadm --misc --zero-superblock "${device}${prefix}1" || true
+        mdadm --misc --zero-superblock "${device}${prefix}2" || true
+        swapoff -a
+        wipefs -a $device
+        dd if=/dev/zero of=$device bs=512 count=1 conv=notrunc
+    done
 }
 
 
@@ -178,9 +196,12 @@ function clean_disk() {
 # ARGS: None
 # OUTS: None
 function wipe_disk() {
-    cryptsetup open --type plain -d /dev/urandom $device to_be_wiped
-    dd if=/dev/zero of=/dev/mapper/to_be_wiped status=progress || true
-    cryptsetup close to_be_wiped
+    for device in "${devices[@]}"; do
+        echo "Wipe disk: $device"
+        cryptsetup open --type plain -d /dev/urandom $device to_be_wiped
+        dd if=/dev/zero of=/dev/mapper/to_be_wiped status=progress || true
+        cryptsetup close to_be_wiped
+    done
 }
 
 
@@ -188,17 +209,22 @@ function setup_encrypt() {
     encrypt_partition=$os_partition
     os_partition=/dev/OS/root
 
-    cryptsetup luksFormat --type luks1 $encrypt_partition
+    echo "Setup LUKS: $encrypt_partition"
+    cryptsetup luksFormat -q --type luks1 $encrypt_partition
+    echo "Open volume"
     cryptsetup open $encrypt_partition cryptlvm
 
+    echo "Create LVM group"
     pvcreate /dev/mapper/cryptlvm
     vgcreate OS /dev/mapper/cryptlvm
 
     if (( $swap > 0 )); then
-        lvcreate -L ${swap}G OS -n swap
+        echo "Create LVM: /dev/OS/swap"
+        lvcreate -L ${swap}G OS -n swap -An
         swap_partition=/dev/OS/swap
     fi
-    lvcreate -l 100%FREE OS -n root
+    echo "Create LVM: /dev/OS/root"
+    lvcreate -l 100%FREE OS -n root -An
 }
 
 
@@ -206,6 +232,9 @@ function setup_encrypt() {
 # ARGS: None
 # OUTS: None
 function partition_disk() {
+    device=$1
+
+    echo "Partition disk: $device"
     os_partition="${device}${prefix}2"
     encrypt_partition=""
     swap_partition=""
@@ -229,12 +258,26 @@ ef02
 "
     fi
 
-    # set swap/root partition
-    if [ "$do_encrypt" = false ] && (( $swap > 0 )); then
-        swap_partition="${device}${prefix}2"
-        os_partition="${device}${prefix}3"
 
+    if [[ "${#devices[@]}" -gt 1 ]]; then
+        # create RAID partition
         partition_commands="
+$partition_commands
+n
+2
+
+
+fd00
+w
+y
+"
+    else
+        # set swap/root partition
+        if [ "$do_encrypt" = false ] && (( $swap > 0 )); then
+            swap_partition="${device}${prefix}2"
+            os_partition="${device}${prefix}3"
+
+            partition_commands="
 $partition_commands
 n
 2
@@ -249,14 +292,14 @@ n
 w
 y
 "
-    else
-        os_partition_type="8304"
-        if [ "$do_encrypt" = true ]; then
-            os_partition_type="8309"
-        fi
+        else
+            os_partition_type="8304"
+            if [ "$do_encrypt" = true ]; then
+                os_partition_type="8309"
+            fi
 
 
-        partition_commands="
+            partition_commands="
 $partition_commands
 n
 2
@@ -266,11 +309,29 @@ $os_partition_type
 w
 y
 "
+        fi
     fi
 
     echo "$partition_commands" | gdisk $device
+}
 
-    if [ "$do_encrypt" = true ]; then
+# DESC: Partitions, formats and mounts disk
+# ARGS: None
+# OUTS: None
+function partition_disks() {
+    raid_members=()
+    for device in "${devices[@]}"; do
+        raid_members+=("${device}${prefix}2")
+        partition_disk $device
+    done
+
+    if [[ "${#devices[@]}" -gt 1 ]]; then
+        os_partition=/dev/md/os
+        mdadm --create --verbose -R --level=10 --metadata=1.2 --chunk=512 --raid-devices="${#raid_members[@]}" --layout=f2 $os_partition "${raid_members[@]}"
+        dd if=/dev/zero of=$os_partition bs=8M count=4
+    fi
+
+    if [[ "$do_encrypt" = true ]]; then
         setup_encrypt
     fi
 
@@ -300,6 +361,9 @@ function update_mirrors() {
 function bootstrap_arch() {
     pacstrap /mnt base base-devel
     genfstab -U /mnt > /mnt/etc/fstab
+    if [[ "${#devices[@]}" -gt 1 ]]; then
+        mdadm --detail --scan >> /mnt/etc/mdadm.conf
+    fi
 
     cp $script_dir /mnt/root/arch-installer -R
     chmod +x /mnt/root/arch-installer/script/chroot.sh
@@ -312,29 +376,29 @@ function bootstrap_arch() {
 
 
 
-function do_chroot() {
-    extra_args=""
+# function do_chroot() {
+#     extra_args=""
 
-    if [[ -z ${no_colour-} ]]; then
-        extra_args="$extra_args -nc"
-    fi
-    if [ "$do_pause" = true ]; then
-        extra_args="$extra_args -p"
-    fi
-    if [ "$do_encrypt" = true ]; then
-        extra_args="$extra_args -y"
-    fi
-    if [ "$do_cleanup" = true ]; then
-        extra_args="$extra_args -c"
-    fi
-    if [ "$do_efi" = true ]; then
-        extra_args="$extra_args -e"
-    fi
+#     if [[ -z ${no_colour-} ]]; then
+#         extra_args="$extra_args -nc"
+#     fi
+#     if [[ "$do_pause" = true ]]; then
+#         extra_args="$extra_args -p"
+#     fi
+#     if [[ "$do_encrypt" = true ]]; then
+#         extra_args="$extra_args -y"
+#     fi
+#     if [[ "$do_cleanup" = true ]]; then
+#         extra_args="$extra_args -c"
+#     fi
+#     if [[ "$do_efi" = true ]]; then
+#         extra_args="$extra_args -e"
+#     fi
 
-    arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -v $device -f "$prefix" -n $hostname
+#     arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -v $device -f "$prefix" -n $hostname
 
-    rm /mnt/root/arch-installer -rf
-}
+#     rm /mnt/root/arch-installer -rf
+# }
 
 
 # DESC: Removes cleans up disk to help compact (defrag/write 0)

@@ -65,17 +65,17 @@ function main() {
         if [ "$do_wipe" = true ]; then
             run_section "Wiping Disk" "wipe_disk"
         fi
-        run_section "Paritioning Disk" "partition_disk"
+        run_section "Paritioning Disk" "partition_disks"
         run_section "Updating Mirrorlist" "update_mirrors"
         run_section "Bootstrapping Arch" "bootstrap_arch"
-        run_section "Running Chroot Install" "do_chroot"
-        if [ "$do_cleanup" = true ]; then
-            run_section "Cleaning Up" "clean_up"
-        fi
-        if [ "$do_efi" = false ]; then
-            run_section "Ejecting Installation Media" "eject_install"
-        fi
-        run_section "Rebooting" "shutdown -r now"
+        # run_section "Running Chroot Install" "do_chroot"
+        # if [ "$do_cleanup" = true ]; then
+        #     run_section "Cleaning Up" "clean_up"
+        # fi
+        # if [ "$do_efi" = false ]; then
+        #     run_section "Ejecting Installation Media" "eject_install"
+        # fi
+        # run_section "Rebooting" "shutdown -r now"
     fi
 }
 
