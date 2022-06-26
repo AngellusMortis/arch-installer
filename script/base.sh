@@ -12,6 +12,7 @@ function var_init() {
     prefix=""
     do_wipe=false
     do_encrypt=false
+    is_raid=false
 }
 
 
@@ -94,6 +95,8 @@ function parse_params() {
 
     if [[ "${#devices[@]}" -eq 0 ]]; then
         devices+=("/dev/sda")
+    elif [[ "${#devices[@]}" -gt 1 ]]; then
+        is_raid=true
     fi
 }
 
@@ -399,9 +402,22 @@ function do_chroot() {
         device_args="${device_args} -v $device"
     done
 
+    if [[ "$is_raid" = true ]]; then
+        os_partition=/dev/md/os
+    fi
     arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -n $hostname -r $os_partition $device_args
 
     rm /mnt/root/arch-installer -rf
+
+    index=0
+    for device in "${devices[@]}"; do
+        index=$((index + 1))
+        if [[ "$index" -gt 1 ]]; then
+            umount /mnt/boot/efi
+            mount $device /mnt/boot/efi
+            arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB${index} --recheck
+        fi
+    done
 }
 
 
