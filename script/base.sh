@@ -179,13 +179,15 @@ function clean_disk() {
     pvremove /dev/mapper/cryptlvm -y || true
     cryptsetup close /dev/mapper/cryptlvm || true
     mdadm --stop /dev/md/os || true
+    swapoff -a
+    umount /mnt/boot/efi || true
+    umount /mnt || true
 
     for device in "${devices[@]}"; do
         echo "Clean disk: $device"
         mdadm --misc --zero-superblock $device || true
         mdadm --misc --zero-superblock "${device}${prefix}1" || true
         mdadm --misc --zero-superblock "${device}${prefix}2" || true
-        swapoff -a
         wipefs -a $device
         dd if=/dev/zero of=$device bs=512 count=1 conv=notrunc
     done

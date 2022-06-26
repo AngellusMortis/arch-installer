@@ -138,7 +138,7 @@ function install_bootloader() {
     fi
 
     echo "Installing packages: ${packages}"
-    pacman -S "${packages}" --noconfirm
+    pacman -S ${packages} --noconfirm
 
     if [[ "$do_encrypt" = true ]]; then
         dd bs=512 count=4 if=/dev/random of=/root/cryptlvm.keyfile iflag=fullblock
