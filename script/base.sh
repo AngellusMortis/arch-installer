@@ -376,29 +376,29 @@ function bootstrap_arch() {
 
 
 
-# function do_chroot() {
-#     extra_args=""
+function do_chroot() {
+    extra_args=""
 
-#     if [[ -z ${no_colour-} ]]; then
-#         extra_args="$extra_args -nc"
-#     fi
-#     if [[ "$do_pause" = true ]]; then
-#         extra_args="$extra_args -p"
-#     fi
-#     if [[ "$do_encrypt" = true ]]; then
-#         extra_args="$extra_args -y"
-#     fi
-#     if [[ "$do_cleanup" = true ]]; then
-#         extra_args="$extra_args -c"
-#     fi
-#     if [[ "$do_efi" = true ]]; then
-#         extra_args="$extra_args -e"
-#     fi
+    if [[ -z ${no_colour-} ]]; then
+        extra_args="$extra_args -nc"
+    fi
+    if [[ "$do_pause" = true ]]; then
+        extra_args="$extra_args -p"
+    fi
+    if [[ "$do_encrypt" = true ]]; then
+        extra_args="$extra_args -y"
+    fi
+    if [[ "$do_cleanup" = true ]]; then
+        extra_args="$extra_args -c"
+    fi
+    if [[ "$do_efi" = true ]]; then
+        extra_args="$extra_args -e"
+    fi
 
-#     arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -v $device -f "$prefix" -n $hostname
+    arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -n $hostname
 
-#     rm /mnt/root/arch-installer -rf
-# }
+    rm /mnt/root/arch-installer -rf
+}
 
 
 # DESC: Removes cleans up disk to help compact (defrag/write 0)

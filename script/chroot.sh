@@ -33,7 +33,7 @@ EOF
 
 
 function var_init() {
-    readonly mirrorlist_url="https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on"
+    readonly mirrorlist_url="https://archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on"
 
     hostname="mortis-arch"
     do_efi=false
@@ -129,6 +129,17 @@ function install_bootloader() {
         chmod 000 /root/cryptlvm.keyfile
         cryptsetup -v luksAddKey ${device}${prefix}2 /root/cryptlvm.keyfile
 
+        # TODO for raid:
+        # install mdadm
+
+        # mkinitcpio
+        # HOOKS base udev autodetect keyboard keymap modconf block mdadm_udev encrypt lvm2 filesystems fsck
+        # change to OS dev / bootloader devices instead of device/prefix
+
+        # grub
+        # GRUB_CMDLINE_LINUX="cryptdevice=/dev/md/os:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"
+        # GRUB_PRELOAD_MODULES="part_gpt part_msdos mdraid09 mdraid1x lvm"
+
         mkinitcpio -p linux
         cp /etc/mkinitcpio.conf{,.orig}
         cat /etc/mkinitcpio.conf.orig | sed 's/FILES=()/FILES=\(\/root\/cryptlvm.keyfile\)/' > /etc/mkinitcpio.conf
@@ -187,7 +198,6 @@ function init_root() {
 function clean_pacman() {
     pacman -Rs gcc groff git make guile --noconfirm
     echo "y\ny" | pacman -Scc
-    echo "ILoveCandy" >> /etc/pacman.cfg
 }
 
 
@@ -208,7 +218,7 @@ function main() {
 
     run_section "Initalizing locales" "init_locales"
     run_section "Setting Hostname" "init_host"
-    run_section "Installing Bootloader" "install_bootloader"
+    # run_section "Installing Bootloader" "install_bootloader"
     run_section "Initaling root User" "init_root"
     run_section "Installing Core Packages" "pacman -S vim base-devel openssh git python dhcpcd --noconfirm"
     run_section "Enabling Core Services" "systemctl enable sshd dhcpcd"
