@@ -174,14 +174,14 @@ function print_vars() {
 # ARGS: None
 # OUTS: None
 function clean_disk() {
+    swapoff -a
+    umount /mnt/boot/efi || true
+    umount /mnt || true
     lvremove -An OS -y || true
     vgremove OS -y || true
     pvremove /dev/mapper/cryptlvm -y || true
     cryptsetup close /dev/mapper/cryptlvm || true
     mdadm --stop /dev/md/os || true
-    swapoff -a
-    umount /mnt/boot/efi || true
-    umount /mnt || true
 
     for device in "${devices[@]}"; do
         echo "Clean disk: $device"
