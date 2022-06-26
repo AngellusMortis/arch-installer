@@ -343,9 +343,9 @@ function partition_disks() {
     mkfs.ext4 $os_partition
     mount $os_partition /mnt
     if [ "$do_efi" = true ]; then
-        mkfs.fat -F32 "${device}${prefix}1"
+        mkfs.fat -F32 "${devices[0]}${prefix}1"
         mkdir /mnt/boot/efi -p
-        mount "${device}${prefix}1" /mnt/boot/efi
+        mount "${devices[0]}${prefix}1" /mnt/boot/efi
     fi
 }
 
@@ -388,14 +388,16 @@ function do_chroot() {
     if [[ "$do_encrypt" = true ]]; then
         extra_args="$extra_args -y"
     fi
-    if [[ "$do_cleanup" = true ]]; then
-        extra_args="$extra_args -c"
-    fi
     if [[ "$do_efi" = true ]]; then
         extra_args="$extra_args -e"
     fi
 
-    arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -n $hostname
+    device_args=""
+    for device in "${devices[@]}"; do
+        device_args="${device_args} -v $device"
+    done
+
+    arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -n $hostname -r $os_partition $device_args
 
     rm /mnt/root/arch-installer -rf
 }

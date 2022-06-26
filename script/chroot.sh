@@ -39,8 +39,9 @@ function var_init() {
     do_efi=false
     do_pause=false
     do_encrypt=false
-    device="/dev/sda"
-    prefix=""
+    root_partition="/dev/sda2"
+    devices=()
+    is_raid=false
 }
 
 
@@ -78,14 +79,14 @@ function parse_params() {
                 shift
                 do_efi=true
                 ;;
-            -v|--device)
+            -r|--root-partition)
                 shift
-                device=$1
+                root_partition=$1
                 shift
                 ;;
-            -f|--prefix)
+            -v|--device)
                 shift
-                prefix=$1
+                devices+=($1)
                 shift
                 ;;
             --)
@@ -99,6 +100,12 @@ function parse_params() {
                 break;
         esac
     done
+
+    if [[ "${#devices[@]}" -eq 0 ]]; then
+        devices+=("/dev/sda")
+    elif [[ "${#devices[@]}" -gt 1 ]]; then
+        is_raid=true
+    fi
 }
 
 
@@ -122,68 +129,102 @@ function init_host() {
 
 
 function install_bootloader() {
-    if [ "$do_encrypt" = true ]; then
-        pacman -S lvm2 linux mkinitcpio grub --noconfirm
+    packages="linux mkinitcpio grub"
+    if [[ "$is_raid" = true ]]; then
+        packages="${packages} mdadm"
+    fi
+    if [[ "$do_encrypt" = true ]]; then
+        packages="${packages} lvm2"
+    fi
 
+    echo "Installing packages: ${packages}"
+    pacman -S "${packages}" --noconfirm
+
+    if [[ "$do_encrypt" = true ]]; then
         dd bs=512 count=4 if=/dev/random of=/root/cryptlvm.keyfile iflag=fullblock
         chmod 000 /root/cryptlvm.keyfile
         cryptsetup -v luksAddKey ${device}${prefix}2 /root/cryptlvm.keyfile
-
-        # TODO for raid:
-        # install mdadm
-
-        # mkinitcpio
-        # HOOKS base udev autodetect keyboard keymap modconf block mdadm_udev encrypt lvm2 filesystems fsck
-        # change to OS dev / bootloader devices instead of device/prefix
-
-        # grub
-        # GRUB_CMDLINE_LINUX="cryptdevice=/dev/md/os:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"
-        # GRUB_PRELOAD_MODULES="part_gpt part_msdos mdraid09 mdraid1x lvm"
-
-        mkinitcpio -p linux
-        cp /etc/mkinitcpio.conf{,.orig}
-        cat /etc/mkinitcpio.conf.orig | sed 's/FILES=()/FILES=\(\/root\/cryptlvm.keyfile\)/' > /etc/mkinitcpio.conf
-        cp /etc/mkinitcpio.conf{,.part1}
-        cat /etc/mkinitcpio.conf.part1 | sed 's/HOOKS=.*/HOOKS=\(base udev autodetect keyboard keymap modconf block encrypt lvm2 filesystems fsck\)/' > /etc/mkinitcpio.conf
-        mkinitcpio -p linux
-
-        cp /etc/default/grub{,.orig}
-        device_uuid=$(lsblk -f | grep ${device//\/dev\/}${prefix}2 | awk '{print $3}')
-        cat /etc/default/grub.orig | sed "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$device_uuid:cryptlvm cryptkey=rootfs:\/root\/cryptlvm.keyfile\"/" > /etc/default/grub
-        echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
-
-        # TODO: https://wiki.archlinux.org/index.php/Silent_boot
-        # GRUB_DEFAULT="0"
-        # GRUB_TIMEOUT="0"
-        # GRUB_DISTRIBUTOR="Arch"
-        # GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3 udev.log_priority=3 vt.global_cursor_default=0"
-        # GRUB_CMDLINE_LINUX="cryptdevice=UUID=567ade56-49a8-42b7-a453-a1324f4f2a5a:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"
-
-        # Preload both GPT and MBR modules so that they are not missed
-        # GRUB_PRELOAD_MODULES="part_gpt part_msdos"
-
-        # Uncomment to enable Hidden Menu, and optionally hide the timeout count
-        # GRUB_HIDDEN_TIMEOUT="3"
-        # GRUB_HIDDEN_TIMEOUT_QUIET="true"
-        # GRUB_RECORDFAIL_TIMEOUT=$GRUB_HIDDEN_TIMEOUT
-
-        # The resolution used on graphical terminal
-        # note that you can use only modes which your graphic card supports via VBE
-        # you can see them in real GRUB with the command `vbeinfo'
-        # GRUB_GFXMODE="1920x1080x32,auto"
-
-        # Uncomment to disable generation of recovery mode menu entries
-        # GRUB_DISABLE_RECOVERY="false"
-    else
-        pacman -S linux mkinitcpio grub --noconfirm
     fi
 
-    if [ "$do_efi" = true ]; then
+    mkinitcpio -p linux
+    cp /etc/mkinitcpio.conf{,.orig}
+    hooks="base udev autodetect keyboard keymap modconf block filesystems fsck"
+
+    if [[ "$do_encrypt" = true ]]; then
+        cp /etc/mkinitcpio.conf{,.tmp}
+        cat /etc/mkinitcpio.conf.tmp | sed 's/FILES=()/FILES=\(\/root\/cryptlvm.keyfile\)/' > /etc/mkinitcpio.conf
+        mv /etc/mkinitcpio.conf{.tmp,}
+
+        if [[ "$is_raid" = true ]]; then
+            hooks="base udev autodetect keyboard keymap modconf block mdadm_udev encrypt lvm2 filesystems fsck"
+        else
+            hooks="base udev autodetect keyboard keymap modconf block encrypt lvm2 filesystems fsck"
+        fi
+    elif [[ "$is_raid" = true ]]; then
+        hooks="base udev autodetect keyboard keymap modconf block filesystems fsck"
+    fi
+
+    cp /etc/mkinitcpio.conf{,.tmp}
+    cat /etc/mkinitcpio.conf.tmp | sed sed "s/HOOKS=.*/HOOKS=\(${hooks}\)/" > /etc/mkinitcpio.conf
+    mv /etc/mkinitcpio.conf{.tmp,}
+    mkinitcpio -p linux
+
+    cp /etc/default/grub{,.orig}
+    modules="part_gpt part_msdos"
+    if [[ "$is_raid" = true ]]; then
+        modules="${modules} mdraid09 mdraid1x"
+    fi
+
+    if [[ "$do_encrypt" = true ]]; then
+        modules="${modules} lvm"
+        cmdline=""
+        if [[ "$is_raid" = true ]]; then
+            cmdline="cryptdevice=${root_partition}:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"
+        else
+            device_uuid=$(lsblk -f | grep ${root_partition} | awk '{print $3}')
+            cmdline="cryptdevice=UUID=$device_uuid:cryptlvm cryptkey=rootfs:\/root\/cryptlvm.keyfile"
+        fi
+        cp /etc/default/grub{,.tmp}
+        cat /etc/default/grub.tmp | sed "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$device_uuid:cryptlvm cryptkey=rootfs:\/root\/cryptlvm.keyfile\"/" > /etc/default/grub
+        mv /etc/default/grub{.tmp,}
+        echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
+    fi
+
+    cat /etc/default/grub.tmp | sed "s/GRUB_PRELOAD_MODULES=\"\"/GRUB_PRELOAD_MODULES=\"${modules}\"/" > /etc/default/grub
+
+    # TODO: https://wiki.archlinux.org/index.php/Silent_boot
+    # GRUB_DEFAULT="0"
+    # GRUB_TIMEOUT="0"
+    # GRUB_DISTRIBUTOR="Arch"
+    # GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3 udev.log_priority=3 vt.global_cursor_default=0"
+    # GRUB_CMDLINE_LINUX="cryptdevice=UUID=567ade56-49a8-42b7-a453-a1324f4f2a5a:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"
+
+    # Preload both GPT and MBR modules so that they are not missed
+    # GRUB_PRELOAD_MODULES="part_gpt part_msdos"
+
+    # Uncomment to enable Hidden Menu, and optionally hide the timeout count
+    # GRUB_HIDDEN_TIMEOUT="3"
+    # GRUB_HIDDEN_TIMEOUT_QUIET="true"
+    # GRUB_RECORDFAIL_TIMEOUT=$GRUB_HIDDEN_TIMEOUT
+
+    # The resolution used on graphical terminal
+    # note that you can use only modes which your graphic card supports via VBE
+    # you can see them in real GRUB with the command `vbeinfo'
+    # GRUB_GFXMODE="1920x1080x32,auto"
+
+    # Uncomment to disable generation of recovery mode menu entries
+    # GRUB_DISABLE_RECOVERY="false"
+
+    if [[ "$do_efi" = true ]]; then
         pacman -S efibootmgr --noconfirm
-        grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --recheck
+        grub_name=GRUB
+        if [[ "$is_raid" = true ]]; then
+            grub_name=GRUB1
+        fi
+        grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=${grub_name} --recheck
         grub-mkconfig -o /boot/grub/grub.cfg
     else
-        grub-install --target=i386-pc $device
+        grub-install --target=i386-pc ${devices[0]}
         grub-mkconfig -o /boot/grub/grub.cfg
     fi
 }
@@ -218,7 +259,7 @@ function main() {
 
     run_section "Initalizing locales" "init_locales"
     run_section "Setting Hostname" "init_host"
-    # run_section "Installing Bootloader" "install_bootloader"
+    run_section "Installing Bootloader" "install_bootloader"
     run_section "Initaling root User" "init_root"
     run_section "Installing Core Packages" "pacman -S vim base-devel openssh git python dhcpcd --noconfirm"
     run_section "Enabling Core Services" "systemctl enable sshd dhcpcd"
