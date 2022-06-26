@@ -143,7 +143,7 @@ function install_bootloader() {
     if [[ "$do_encrypt" = true ]]; then
         dd bs=512 count=4 if=/dev/random of=/root/cryptlvm.keyfile iflag=fullblock
         chmod 000 /root/cryptlvm.keyfile
-        cryptsetup -v luksAddKey ${device}${prefix}2 /root/cryptlvm.keyfile
+        cryptsetup -v luksAddKey ${root_partition} /root/cryptlvm.keyfile
     fi
 
     mkinitcpio -p linux
