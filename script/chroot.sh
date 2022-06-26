@@ -136,6 +136,9 @@ function install_bootloader() {
     if [[ "$do_encrypt" = true ]]; then
         packages="${packages} lvm2"
     fi
+    if [[ "$do_efi" = true ]]; then
+        packages="${packages} efibootmgr"
+    fi
 
     echo "Installing packages: ${packages}"
     pacman -S ${packages} --noconfirm
@@ -153,7 +156,7 @@ function install_bootloader() {
     if [[ "$do_encrypt" = true ]]; then
         cp /etc/mkinitcpio.conf{,.tmp}
         cat /etc/mkinitcpio.conf.tmp | sed 's/FILES=()/FILES=\(\/root\/cryptlvm.keyfile\)/' > /etc/mkinitcpio.conf
-        mv /etc/mkinitcpio.conf{.tmp,}
+        rm /etc/mkinitcpio.conf.tmp
 
         if [[ "$is_raid" = true ]]; then
             hooks="base udev autodetect keyboard keymap modconf block mdadm_udev encrypt lvm2 filesystems fsck"
@@ -165,8 +168,8 @@ function install_bootloader() {
     fi
 
     cp /etc/mkinitcpio.conf{,.tmp}
-    cat /etc/mkinitcpio.conf.tmp | sed sed "s/HOOKS=.*/HOOKS=\(${hooks}\)/" > /etc/mkinitcpio.conf
-    mv /etc/mkinitcpio.conf{.tmp,}
+    cat /etc/mkinitcpio.conf.tmp | sed "s/HOOKS=.*/HOOKS=\(${hooks}\)/" > /etc/mkinitcpio.conf
+    rm /etc/mkinitcpio.conf.tmp
     mkinitcpio -p linux
 
     cp /etc/default/grub{,.orig}
@@ -179,18 +182,20 @@ function install_bootloader() {
         modules="${modules} lvm"
         cmdline=""
         if [[ "$is_raid" = true ]]; then
-            cmdline="cryptdevice=${root_partition}:cryptlvm cryptkey=rootfs:/root/cryptlvm.keyfile"
+            cmdline="cryptdevice=\/dev\/md\/os:cryptlvm cryptkey=rootfs:\/root\/cryptlvm.keyfile"
         else
             device_uuid=$(lsblk -f | grep ${root_partition} | awk '{print $3}')
             cmdline="cryptdevice=UUID=$device_uuid:cryptlvm cryptkey=rootfs:\/root\/cryptlvm.keyfile"
         fi
         cp /etc/default/grub{,.tmp}
-        cat /etc/default/grub.tmp | sed "s/GRUB_CMDLINE_LINUX=\"\"/GRUB_CMDLINE_LINUX=\"cryptdevice=UUID=$device_uuid:cryptlvm cryptkey=rootfs:\/root\/cryptlvm.keyfile\"/" > /etc/default/grub
-        mv /etc/default/grub{.tmp,}
+        cat /etc/default/grub.tmp | sed "s/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX=\"${cmdline}\"/" > /etc/default/grub
+        rm /etc/default/grub.tmp
         echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
     fi
 
-    cat /etc/default/grub.tmp | sed "s/GRUB_PRELOAD_MODULES=\"\"/GRUB_PRELOAD_MODULES=\"${modules}\"/" > /etc/default/grub
+    cp /etc/default/grub{,.tmp}
+    cat /etc/default/grub.tmp | sed "s/GRUB_PRELOAD_MODULES=.*/GRUB_PRELOAD_MODULES=\"${modules}\"/" > /etc/default/grub
+    rm /etc/default/grub.tmp
 
     # TODO: https://wiki.archlinux.org/index.php/Silent_boot
     # GRUB_DEFAULT="0"
@@ -216,7 +221,6 @@ function install_bootloader() {
     # GRUB_DISABLE_RECOVERY="false"
 
     if [[ "$do_efi" = true ]]; then
-        pacman -S efibootmgr --noconfirm
         grub_name=GRUB
         if [[ "$is_raid" = true ]]; then
             grub_name=GRUB1
