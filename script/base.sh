@@ -408,16 +408,18 @@ function do_chroot() {
     arch-chroot /mnt /root/arch-installer/script/chroot.sh$extra_args -n $hostname -r $os_partition $device_args
 
     rm /mnt/root/arch-installer -rf
-
-    index=0
-    for device in "${devices[@]}"; do
-        index=$((index + 1))
-        if [[ "$index" -gt 1 ]]; then
-            umount /mnt/boot/efi
-            mount "${device}${prefix}1" /mnt/boot/efi
-            arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB${index} --recheck
-        fi
-    done
+    if [[ "$is_raid" = true ]]; then
+        echo "Installing bootloader on extra RAID disks..."
+        index=0
+        for device in "${devices[@]}"; do
+            index=$((index + 1))
+            if [[ "$index" -gt 1 ]]; then
+                umount /mnt/boot/efi
+                mount "${device}${prefix}1" /mnt/boot/efi
+                arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB${index} --recheck
+            fi
+        done
+    fi
 }
 
 

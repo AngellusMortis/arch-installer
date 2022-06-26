@@ -129,7 +129,7 @@ function init_host() {
 
 
 function install_bootloader() {
-    packages="linux mkinitcpio grub"
+    packages="linux linux-firmware mkinitcpio grub"
     if [[ "$is_raid" = true ]]; then
         packages="${packages} mdadm"
     fi
