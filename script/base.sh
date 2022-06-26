@@ -414,7 +414,7 @@ function do_chroot() {
         index=$((index + 1))
         if [[ "$index" -gt 1 ]]; then
             umount /mnt/boot/efi
-            mount $device /mnt/boot/efi
+            mount "${device}${prefix}1" /mnt/boot/efi
             arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB${index} --recheck
         fi
     done
