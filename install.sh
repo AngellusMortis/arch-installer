@@ -72,9 +72,6 @@ function main() {
         if [ "$do_cleanup" = true ]; then
             run_section "Cleaning Up" "clean_up"
         fi
-        if [ "$do_efi" = false ]; then
-            run_section "Ejecting Installation Media" "eject_install"
-        fi
         run_section "Rebooting" "shutdown -r now"
     fi
 }
