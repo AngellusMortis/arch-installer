@@ -80,6 +80,7 @@ function parse_params() {
             -o|--os-size)
                 shift
                 os_size=$1
+                shift
                 ;;
             --)
                 shift
