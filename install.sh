@@ -25,10 +25,10 @@ Usage:
      --no-color                 Disables color output
      -n|--hostname              Hostname to use (default: mortis-arch)
      -w|--wipe                  Securely wipe disk before partitioning
-     -e|--efi                   Use UEFI instead of BIOS boot
      -y|--encrypt               Encrypt disk
      -s|--swap                  Swap size in GB (default: 0 = no swap)
      -v|--device                Device for installation (default: /dev/sda)
+     -o|--os-size               Size of root partition. Defaults to rest of disk.
      -f|--prefix                Extra partition prefix
      -c|--clean                 Clean up disks for compaction
      --no-input                 Automaitcally use defaults for everything
