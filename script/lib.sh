@@ -70,7 +70,7 @@ function script_trap_exit() {
         rmdir "$script_lock"
     fi
 
-    # Restore terminal colours
+    # Restore terminal colors
     printf '%b' "$ta_none"
 }
 
@@ -126,12 +126,12 @@ function script_init() {
 }
 
 
-# DESC: Initialise colour variables
+# DESC: Initialise color variables
 # ARGS: None
 # OUTS: Read-only variables with ANSI control codes
-# NOTE: If --no-colour was set the variables will be empty
-function colour_init() {
-    if [[ -z ${no_colour-} ]]; then
+# NOTE: If --no-color was set the variables will be empty
+function color_init() {
+    if [[ -z ${no_color-} ]]; then
         # Text attributes
         readonly ta_bold="$(tput bold 2> /dev/null || true)"
         printf '%b' "$ta_none"
@@ -250,8 +250,8 @@ function lock_init() {
 
 # DESC: Pretty print the provided string
 # ARGS: $1 (required): Message to print (defaults to a green foreground)
-#       $2 (optional): Colour to print the message with. This can be an ANSI
-#                      escape code or one of the prepopulated colour variables.
+#       $2 (optional): color to print the message with. This can be an ANSI
+#                      escape code or one of the prepopulated color variables.
 #       $3 (optional): Set to any value to not append a new line to the message
 # OUTS: None
 function pretty_print() {
@@ -259,7 +259,7 @@ function pretty_print() {
         script_exit 'Missing required argument to pretty_print()!' 2
     fi
 
-    if [[ -z ${no_colour-} ]]; then
+    if [[ -z ${no_color-} ]]; then
         if [[ -n ${2-} ]]; then
             printf '%b' "$2"
         else

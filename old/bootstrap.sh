@@ -40,7 +40,7 @@ function script_trap_err() {
 function script_trap_exit() {
     cd "$orig_cwd"
 
-    # Restore terminal colours
+    # Restore terminal colors
     printf '%b' "$ta_none"
 }
 
@@ -103,12 +103,12 @@ function script_init() {
 }
 
 
-# DESC: Initialise colour variables
+# DESC: Initialise color variables
 # ARGS: None
 # OUTS: Read-only variables with ANSI control codes
-# NOTE: If --no-colour was set the variables will be empty
-function colour_init() {
-    if [[ -z ${no_colour-} ]]; then
+# NOTE: If --no-color was set the variables will be empty
+function color_init() {
+    if [[ -z ${no_color-} ]]; then
         # Text attributes
         readonly ta_bold="$(tput bold 2> /dev/null || true)"
         printf '%b' "$ta_none"
@@ -189,8 +189,8 @@ function colour_init() {
 
 # DESC: Pretty print the provided string
 # ARGS: $1 (required): Message to print (defaults to a bold cyan foreground)
-#       $2 (optional): Colour to print the message with. This can be an ANSI
-#                      escape code or one of the prepopulated colour variables.
+#       $2 (optional): color to print the message with. This can be an ANSI
+#                      escape code or one of the prepopulated color variables.
 #       $3 (optional): Set to any value to not append a new line to the message
 # OUTS: None
 function pretty_print() {
@@ -198,7 +198,7 @@ function pretty_print() {
         script_exit 'Missing required argument to pretty_print()!' 2
     fi
 
-    if [[ -z ${no_colour-} ]]; then
+    if [[ -z ${no_color-} ]]; then
         if [[ -n ${2-} ]]; then
             printf '%b' "$2"
         else
@@ -224,7 +224,7 @@ Usage:
     $script_name [OPTIONS] BUILD_TYPE:(${allowed_types[@]})
 
      -h|--help                  Displays this help
-    -nc|--no-colour             Disables colour output
+     --no-color                Disables color output
      -n|--hostname              Hostname to configure inital image with (default: mortis-arch)
      -s|--swap                  Include swap partition
      -e|--efi                   Use UEFI instead of BIOS boot
@@ -257,9 +257,9 @@ function parse_params() {
                 script_usage
                 exit 0
                 ;;
-            -nc|--no-colour)
+            --no-color)
                 shift
-                no_colour=true
+                no_color=true
                 ;;
             -n|--hostname)
                 shift
@@ -458,7 +458,7 @@ function main() {
 
     script_init "$@"
     parse_params "$@"
-    colour_init
+    color_init
 
     run_section "Syncing Time" "timedatectl set-ntp true"
     run_section "Paritioning Disk" "partition_disk"

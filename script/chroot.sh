@@ -22,7 +22,7 @@ function script_usage() {
 Usage:
      -h|--help                  Displays this help
      -p|--pause                 Pauses after each section
-    -nc|--no-colour             Disables colour output
+     --no-color                 Disables color output
      -n|--hostname              Hostname to use (default: mortis-arch)
      -e|--efi                   Use UEFI instead of BIOS boot
      -v|--device                Device for installation (default: /dev/sda)
@@ -63,7 +63,7 @@ function parse_params() {
                 ;;
             --no-color)
                 shift
-                no_colour=true
+                no_color=true
                 ;;
             -n|--hostname)
                 shift
@@ -246,7 +246,7 @@ function main() {
     var_init "$@"
     parse_params "$@"
     cron_init
-    colour_init
+    color_init
 
     run_section "Initalizing locales" "init_locales"
     run_section "Setting Hostname" "init_host"

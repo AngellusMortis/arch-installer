@@ -35,7 +35,7 @@ function parse_params() {
                 ;;
             --no-color)
                 shift
-                no_colour=true
+                no_color=true
                 ;;
             -n|--hostname)
                 shift
@@ -372,7 +372,7 @@ function bootstrap_arch() {
 function do_chroot() {
     extra_args=""
 
-    if [[ -z ${no_colour-} ]]; then
+    if [[ -z ${no_color-} ]]; then
         extra_args="$extra_args --no-color"
     fi
     if [[ "$do_pause" = true ]]; then

@@ -22,7 +22,7 @@ function script_usage() {
 Usage:
      -h|--help                  Displays this help
      -p|--pause                 Pauses after each section
-    -nc|--no-colour             Disables colour output
+     --no-color                 Disables color output
      -n|--hostname              Hostname to use (default: mortis-arch)
      -w|--wipe                  Securely wipe disk before partitioning
      -e|--efi                   Use UEFI instead of BIOS boot
@@ -31,7 +31,7 @@ Usage:
      -v|--device                Device for installation (default: /dev/sda)
      -f|--prefix                Extra partition prefix
      -c|--clean                 Clean up disks for compaction
-    -ni|--no-input              Automaitcally use defaults for everything
+     --no-input                 Automaitcally use defaults for everything
      -d|--dry-run               Only print final variables, do not proceed
 EOF
 }
@@ -51,7 +51,7 @@ function main() {
     var_init "$@"
     parse_params "$@"
     cron_init
-    colour_init
+    color_init
 
     if [ "$no_input" = false ]; then
         run_section "Configure" "get_params $script_params"
