@@ -29,7 +29,6 @@ Usage:
      -s|--swap                  Swap size in GB (default: 0 = no swap)
      -v|--device                Device for installation (default: /dev/sda)
      -o|--os-size               Size of root partition in GB. (default: all free)
-     -f|--prefix                Extra partition prefix
      -c|--clean                 Clean up disks for compaction
      --no-input                 Automaitcally use defaults for everything
      -d|--dry-run               Only print final variables, do not proceed
@@ -69,13 +68,13 @@ function main() {
         run_section "Updating Mirrorlist" "update_mirrors"
         run_section "Bootstrapping Arch" "bootstrap_arch"
         run_section "Running Chroot Install" "do_chroot"
-        # if [ "$do_cleanup" = true ]; then
-        #     run_section "Cleaning Up" "clean_up"
-        # fi
-        # if [ "$do_efi" = false ]; then
-        #     run_section "Ejecting Installation Media" "eject_install"
-        # fi
-        # run_section "Rebooting" "shutdown -r now"
+        if [ "$do_cleanup" = true ]; then
+            run_section "Cleaning Up" "clean_up"
+        fi
+        if [ "$do_efi" = false ]; then
+            run_section "Ejecting Installation Media" "eject_install"
+        fi
+        run_section "Rebooting" "shutdown -r now"
     fi
 }
 

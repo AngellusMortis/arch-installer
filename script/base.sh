@@ -12,9 +12,8 @@ function var_init() {
     do_wipe=false
     do_encrypt=false
     is_raid=false
-    os_size=""
+    os_size=0
 }
-
 
 # DESC: Parameter parser
 # ARGS: $@ (optional): Arguments provided to the script
@@ -63,11 +62,6 @@ function parse_params() {
                 shift
                 no_input=true
                 ;;
-            -f|--prefix)
-                shift
-                prefix=$1
-                shift
-                ;;
             -v|--device)
                 shift
                 devices+=($1)
@@ -99,18 +93,18 @@ function parse_params() {
     elif [[ "${#devices[@]}" -gt 1 ]]; then
         is_raid=true
     fi
+
+    if [[ ${devices[0]} = /dev/nvme* ]]; then
+        prefix="p"
+    fi
 }
 
 
 function get_params() {
     if [ `contains "$*" -v` -eq 0 ]; then
-        prompt_param "$devices" "Disk to Install to?"
-        device="$prompt_result"
-    fi
-
-    if [ `contains "$*" -f` -eq 0 ]; then
-        prompt_param "$prefix" "Extra prefix for partitions?"
-        prefix="$prompt_result"
+        prompt_param "$devices" "Disk(s) to Install to (space sperated)?"
+        IFS=' '
+        read -ra devices <<< "$prompt_result"
     fi
 
     if [ `contains "$*" -w` -eq 0 ]; then
@@ -131,6 +125,11 @@ function get_params() {
     if [ `contains "$*" -s` -eq 0 ]; then
         prompt_param "$swap" "Swap space to allocate in GB"
         swap="$prompt_result"
+    fi
+
+    if [ `contains "$*" -s` -eq 0 ]; then
+        prompt_param "$swap" "OS partition size in GB (0 = rest of disk)"
+        os_size="$prompt_result"
     fi
 
     if [ `contains "$*" -c` -eq 0 ]; then
@@ -160,6 +159,13 @@ function print_vars() {
 
     pretty_print "Swap" $fg_magenta 1
     pretty_print ": ${swap}GB" $fg_white
+
+    os_str="rest of disk"
+    if [[ $os_size -gt 0 ]]; then
+        os_str="${os_size}GB"
+    fi
+    pretty_print "OS" $fg_magenta 1
+    pretty_print ": ${os_str}" $fg_white
 
     pretty_print "Do Clean Up" $fg_magenta 1
     pretty_print ": $do_cleanup" $fg_white
@@ -237,7 +243,7 @@ function partition_disk() {
     encrypt_partition=""
     swap_partition=""
     os_part_arg=""
-    if [[ -n os_size ]]; then
+    if [[ $os_size -gt 0 ]]; then
         os_part_arg="+${os_size}G"
         os_swap_part_arg="+$(($os_size + $swap))G"
     fi
