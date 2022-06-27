@@ -2,7 +2,6 @@ function var_init() {
     readonly mirrorlist_url="https://archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on"
 
     hostname="mortis-arch"
-    do_efi=false
     do_pause=false
     swap=0
     no_input=false
@@ -13,6 +12,7 @@ function var_init() {
     do_wipe=false
     do_encrypt=false
     is_raid=false
+    os_size=""
 }
 
 
@@ -33,7 +33,7 @@ function parse_params() {
                 shift
                 do_pause=true
                 ;;
-            -nc|--no-colour)
+            --no-color)
                 shift
                 no_colour=true
                 ;;
@@ -50,10 +50,6 @@ function parse_params() {
                 shift
                 do_cleanup=true
                 ;;
-            -e|--efi)
-                shift
-                do_efi=true
-                ;;
             -w|--wipe)
                 shift
                 do_wipe=true
@@ -63,7 +59,7 @@ function parse_params() {
                 swap=$1
                 shift
                 ;;
-            -ni|--no-input)
+            --no-input)
                 shift
                 no_input=true
                 ;;
@@ -80,6 +76,10 @@ function parse_params() {
             -d|--dry-run)
                 shift
                 dry_run=true
+                ;;
+            -o|--os-size)
+                shift
+                os_size=$1
                 ;;
             --)
                 shift
@@ -132,11 +132,6 @@ function get_params() {
         swap="$prompt_result"
     fi
 
-    if [ `contains "$*" -e` -eq 0 ]; then
-        prompt_bool "$do_efi" "Use EFI"
-        do_efi=$prompt_result
-    fi
-
     if [ `contains "$*" -c` -eq 0 ]; then
         prompt_bool "$do_cleanup" "Clean up for disk compaction?"
         do_cleanup=$prompt_result
@@ -164,9 +159,6 @@ function print_vars() {
 
     pretty_print "Swap" $fg_magenta 1
     pretty_print ": ${swap}GB" $fg_white
-
-    pretty_print "Using EFI" $fg_magenta 1
-    pretty_print ": $do_efi" $fg_white
 
     pretty_print "Do Clean Up" $fg_magenta 1
     pretty_print ": $do_cleanup" $fg_white
@@ -243,25 +235,20 @@ function partition_disk() {
     os_partition="${device}${prefix}2"
     encrypt_partition=""
     swap_partition=""
+    os_part_arg=""
+    if [[ -n os_size ]]; then
+        os_part_arg="+${os_size}G"
+        os_swap_part_arg="+$(($os_size + $swap))G"
+    fi
 
     # set boot partition
-    if [ "$do_efi" = true ]; then
-        partition_commands="
+    partition_commands="
 n
 1
 
 +550M
 ef00
 "
-    else
-        partition_commands="
-n
-1
-
-+1M
-ef02
-"
-    fi
 
 
     if [[ "${#devices[@]}" -gt 1 ]]; then
@@ -271,7 +258,7 @@ $partition_commands
 n
 2
 
-
+${os_part_arg}
 fd00
 w
 y
@@ -292,15 +279,16 @@ n
 n
 3
 
-
+${os_part_arg}
 8304
 w
 y
 "
         else
             os_partition_type="8304"
-            if [ "$do_encrypt" = true ]; then
+            if [[ "$do_encrypt" = true ]]; then
                 os_partition_type="8309"
+                os_part_arg="${os_swap_part_arg}"
             fi
 
 
@@ -309,7 +297,7 @@ $partition_commands
 n
 2
 
-
+${os_part_arg}
 $os_partition_type
 w
 y
@@ -347,11 +335,11 @@ function partition_disks() {
 
     mkfs.ext4 $os_partition
     mount $os_partition /mnt
-    if [ "$do_efi" = true ]; then
-        mkfs.fat -F32 "${devices[0]}${prefix}1"
-        mkdir /mnt/boot/efi -p
-        mount "${devices[0]}${prefix}1" /mnt/boot/efi
-    fi
+    for device in "${devices[@]}"; do
+        mkfs.fat -F32 "${device}${prefix}1"
+    done
+    mkdir /mnt/boot/efi -p
+    mount "${devices[0]}${prefix}1" /mnt/boot/efi
 }
 
 
@@ -385,16 +373,13 @@ function do_chroot() {
     extra_args=""
 
     if [[ -z ${no_colour-} ]]; then
-        extra_args="$extra_args -nc"
+        extra_args="$extra_args --no-color"
     fi
     if [[ "$do_pause" = true ]]; then
         extra_args="$extra_args -p"
     fi
     if [[ "$do_encrypt" = true ]]; then
         extra_args="$extra_args -y"
-    fi
-    if [[ "$do_efi" = true ]]; then
-        extra_args="$extra_args -e"
     fi
 
     device_args=""

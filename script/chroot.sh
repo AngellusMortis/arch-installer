@@ -36,7 +36,6 @@ function var_init() {
     readonly mirrorlist_url="https://archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on"
 
     hostname="mortis-arch"
-    do_efi=false
     do_pause=false
     do_encrypt=false
     root_partition="/dev/sda2"
@@ -62,7 +61,7 @@ function parse_params() {
                 shift
                 do_pause=true
                 ;;
-            -nc|--no-colour)
+            --no-color)
                 shift
                 no_colour=true
                 ;;
@@ -74,10 +73,6 @@ function parse_params() {
             -y|--encrypt)
                 shift
                 do_encrypt=true
-                ;;
-            -e|--efi)
-                shift
-                do_efi=true
                 ;;
             -r|--root-partition)
                 shift
@@ -129,15 +124,12 @@ function init_host() {
 
 
 function install_bootloader() {
-    packages="linux linux-firmware mkinitcpio grub"
+    packages="linux linux-firmware mkinitcpio grub efibootmgr"
     if [[ "$is_raid" = true ]]; then
         packages="${packages} mdadm"
     fi
     if [[ "$do_encrypt" = true ]]; then
         packages="${packages} lvm2"
-    fi
-    if [[ "$do_efi" = true ]]; then
-        packages="${packages} efibootmgr"
     fi
 
     echo "Installing packages: ${packages}"
@@ -220,17 +212,12 @@ function install_bootloader() {
     # Uncomment to disable generation of recovery mode menu entries
     # GRUB_DISABLE_RECOVERY="false"
 
-    if [[ "$do_efi" = true ]]; then
-        grub_name=GRUB
-        if [[ "$is_raid" = true ]]; then
-            grub_name=GRUB1
-        fi
-        grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=${grub_name} --recheck
-        grub-mkconfig -o /boot/grub/grub.cfg
-    else
-        grub-install --target=i386-pc ${devices[0]}
-        grub-mkconfig -o /boot/grub/grub.cfg
+    grub_name=GRUB
+    if [[ "$is_raid" = true ]]; then
+        grub_name=GRUB1
     fi
+    grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=${grub_name} --recheck
+    grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 
