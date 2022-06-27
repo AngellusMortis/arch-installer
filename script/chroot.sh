@@ -269,7 +269,7 @@ function main() {
     run_section "Installing Bootloader" "install_bootloader"
     run_section "Initaling User" "init_root"
     run_section "Installing Core Packages" "pacman -S vim base-devel openssh git python dhcpcd --noconfirm"
-    run_section "Enabling Core Services" "systemctl enable sshd dhcpcd systemd systemd-timesyncd"
+    run_section "Enabling Core Services" "systemctl enable sshd dhcpcd systemd-timesyncd"
     run_section "Cleaning Up Pacman" "clean_pacman"
 }
 
