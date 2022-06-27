@@ -29,6 +29,7 @@ Usage:
      -s|--swap                  Swap size in GB (default: 0 = no swap)
      -v|--device                Device for installation (default: /dev/sda)
      -o|--os-size               Size of root partition in GB. (default: all free)
+     -u|--user                  Optional user to setup. (default: none)
      -c|--clean                 Clean up disks for compaction
      --no-input                 Automaitcally use defaults for everything
      -d|--dry-run               Only print final variables, do not proceed

@@ -13,6 +13,7 @@ function var_init() {
     do_encrypt=false
     is_raid=false
     os_size=0
+    user=""
 }
 
 # DESC: Parameter parser
@@ -76,6 +77,11 @@ function parse_params() {
                 os_size=$1
                 shift
                 ;;
+            -u|--user)
+                shift
+                user=$1
+                shift
+                ;;
             --)
                 shift
                 break
@@ -132,6 +138,11 @@ function get_params() {
         os_size="$prompt_result"
     fi
 
+    if [ `contains "$*" -s` -eq 0 ]; then
+        prompt_param "$user" "Extra user to set up"
+        user="$prompt_result"
+    fi
+
     if [ `contains "$*" -c` -eq 0 ]; then
         prompt_bool "$do_cleanup" "Clean up for disk compaction?"
         do_cleanup=$prompt_result
@@ -166,6 +177,13 @@ function print_vars() {
     fi
     pretty_print "OS" $fg_magenta 1
     pretty_print ": ${os_str}" $fg_white
+
+    user_str="none (root only)"
+    if [[ -n $user ]]; then
+        user_str="${user}"
+    fi
+    pretty_print "User" $fg_magenta 1
+    pretty_print ": ${user}" $fg_white
 
     pretty_print "Do Clean Up" $fg_magenta 1
     pretty_print ": $do_cleanup" $fg_white
@@ -387,6 +405,9 @@ function do_chroot() {
     fi
     if [[ "$do_encrypt" = true ]]; then
         extra_args="$extra_args -y"
+    fi
+    if [[ -n "$user"  ]]; then
+        extra_args="$extra_args -u $user"
     fi
 
     device_args=""

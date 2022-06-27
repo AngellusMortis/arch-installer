@@ -41,6 +41,7 @@ function var_init() {
     root_partition="/dev/sda2"
     devices=()
     is_raid=false
+    user=""
 }
 
 
@@ -82,6 +83,11 @@ function parse_params() {
             -v|--device)
                 shift
                 devices+=($1)
+                shift
+                ;;
+            -u|--user)
+                shift
+                user=$1
                 shift
                 ;;
             --)
@@ -224,6 +230,16 @@ function install_bootloader() {
 function init_root() {
     passwd=`date +%s | sha256sum | base64 | head -c 32`
     echo "root:$passwd" | chpasswd
+
+    if [[ -n "$user" ]]; then
+        useradd -m $user
+        echo "$user ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/01-admin
+        mkdir ~$user/.ssh/
+        chmod 700 ~$user/.ssh/
+        cp ~/.ssh/authorized_keys ~$user/.ssh/authorized_keys
+        chmod 600 ~$user/.ssh/authorized_keys
+        chown -R $user:$user ~$user/.ssh/
+    fi
 }
 
 
@@ -251,7 +267,7 @@ function main() {
     run_section "Initalizing locales" "init_locales"
     run_section "Setting Hostname" "init_host"
     run_section "Installing Bootloader" "install_bootloader"
-    run_section "Initaling root User" "init_root"
+    run_section "Initaling User" "init_root"
     run_section "Installing Core Packages" "pacman -S vim base-devel openssh git python dhcpcd --noconfirm"
     run_section "Enabling Core Services" "systemctl enable sshd dhcpcd"
     run_section "Cleaning Up Pacman" "clean_pacman"
