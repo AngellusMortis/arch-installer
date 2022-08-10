@@ -162,7 +162,7 @@ function install_bootloader() {
             hooks="base udev autodetect keyboard keymap modconf block encrypt lvm2 filesystems fsck"
         fi
     elif [[ "$is_raid" = true ]]; then
-        hooks="base udev autodetect keyboard keymap modconf block filesystems fsck"
+        hooks="base udev autodetect keyboard keymap modconf block mdadm_udev filesystems fsck"
     fi
 
     cp /etc/mkinitcpio.conf{,.tmp}
